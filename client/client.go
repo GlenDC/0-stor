@@ -23,7 +23,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/snappy"
-	"github.com/minio/blake2b-simd"
+	_ "github.com/minio/blake2b-simd"
+    "crypto/sha1"
 )
 
 var (
@@ -149,7 +150,8 @@ func (c *Client) writeFWithMeta(key []byte, r io.Reader, prevKey []byte, prevMet
 		blockSize int
 		err       error
 		aesgm     encrypt.EncrypterDecrypter
-		blakeH    = blake2b.New256()
+		// blakeH    = blake2b.New256()
+		blakeH    = sha1.New()
 	)
 
 	if c.policy.Encrypt {
@@ -200,6 +202,8 @@ func (c *Client) writeFWithMeta(key []byte, r io.Reader, prevKey []byte, prevMet
 		blakeH.Write(block)
 		hashed := blakeH.Sum(nil)
 
+        fmt.Println(hashed)
+
 		chunkKey := hashed[:]
 		chunk := &meta.Chunk{Key: chunkKey}
 
@@ -226,11 +230,15 @@ func (c *Client) writeFWithMeta(key []byte, r io.Reader, prevKey []byte, prevMet
 				return nil, err
 			}
 		default:
-			shard, err := c.writeRandom(chunkKey, block, refList)
+            /*
+            shard, err := c.writeRandom(chunkKey, block, refList)
 			if err != nil {
 				return nil, err
 			}
-			usedShards = []string{shard}
+            */
+
+			// usedShards = []string{shard}
+			usedShards = []string{}
 		}
 
 		chunk.Size = uint64(len(block))
