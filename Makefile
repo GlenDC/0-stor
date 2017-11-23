@@ -14,7 +14,7 @@ CLIENT_PACKAGES = $(shell go list ./client/...)
 ldflags = -extldflags "-static"
 ldflagsversion = -X main.CommitHash=$(COMMIT_HASH) -X main.BuildDate=$(BUILD_DATE) -s -w
 
-all: server cli
+all: server cli proxy
 
 cli: $(OUTPUT)
 ifeq ($(GOOS), darwin)
@@ -34,9 +34,19 @@ else
 		go build -ldflags '$(ldflags)$(ldflagsversion)' -o $(OUTPUT)/zerostorserver ./cmd/zerostorserver
 endif
 
+proxy: $(OUTPUT)
+ifeq ($(GOOS), darwin)
+	GOOS=$(GOOS) GOARCH=$(GOARCH) \
+		go build -ldflags '$(ldflagsversion)' -o $(OUTPUT)/ztorproxy ./cmd/ztorproxy
+else
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) \
+		go build -ldflags '$(ldflags)$(ldflagsversion)' -o $(OUTPUT)/ztorproxy ./cmd/ztorproxy
+endif
+
 install: all
 	cp $(OUTPUT)/zerostorcli $(GOPATH)/bin/zerostorcli
 	cp $(OUTPUT)/zerostorserver $(GOPATH)/bin/zerostorserver
+	cp $(OUTPUT)/ztorproxy $(GOPATH)/bin/ztorproxy
 
 test: testserver testclient
 

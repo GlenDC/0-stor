@@ -1,0 +1,11 @@
+coverage==4.4.2
+delegator==0.0.3
+grpcio==1.7.0
+grpcio-tools==1.7.0
+nose2==0.7.2
+pexpect==4.3.0
+pkg-resources==0.0.0
+protobuf==3.5.0.post1
+ptyprocess==0.5.2
+PyYAML==3.12
+six==1.11.0

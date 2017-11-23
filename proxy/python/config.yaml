@@ -1,0 +1,24 @@
+organization:          # itsyou.online organization name
+namespace: thedisk       # itsyou.online namespace
+iyo_app_id:
+iyo_app_secret:
+# the address(es) of 0-stor server
+data_shards:
+    - 127.0.0.1:12345
+    - 127.0.0.1:12346
+    - 127.0.0.1:12347
+# the address(es) of an etcd server cluster
+meta_shards:
+    - http://127.0.0.1:2379
+    
+block_size: 4096
+
+replication_nr: 3
+replication_max_size: 4096
+
+distribution_data: 0
+distribution_parity: 0
+
+compress: true
+encrypt: true
+encrypt_key: ab345678901234567890123456789012
