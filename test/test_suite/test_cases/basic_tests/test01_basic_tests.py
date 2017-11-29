@@ -102,7 +102,6 @@ class BasicTestCases(TestcasesBase):
                            ('delete_write', ['-d', '-w']),
                            ('delete_write_read', ['-d', '-w', '-r']),
                            ])
-    @skip('https://github.com/zero-os/0-stor/issues/260')
     def test006_delete_file_by_iyo_slave_user(self, name, permissions):
         """ ZST-008
 
