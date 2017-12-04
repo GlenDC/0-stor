@@ -19,7 +19,7 @@ func main() {
 		defer profile.Start(profile.ProfilePath(*profileOutDir), profile.CPUProfile).Stop()
 	case "mem":
 		defer profile.Start(profile.ProfilePath(*profileOutDir), profile.MemProfile).Stop()
-	case "mutex":
+	case "trace":
 		defer profile.Start(profile.ProfilePath(*profileOutDir), profile.TraceProfile).Stop()
 	case "block":
 		defer profile.Start(profile.ProfilePath(*profileOutDir), profile.BlockProfile).Stop()
