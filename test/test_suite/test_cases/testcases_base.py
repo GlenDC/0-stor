@@ -386,7 +386,6 @@ class TestcasesBase(TestCase):
             elif permission == '-a':
                 suborg = 'admin'
             namespace_value = "%s.0stor.%s.%s" % (self.config_zerostor['organization'], namespace, suborg)
-
             status_code = self.iyo_slave_client.api.AcceptMembership(namespace_value, 'member',
                                                                      self.iyo_slave_username).status_code
             print(colored(' [*] namespace: %s, response status code: %d' % (namespace_value, status_code), 'yellow'))
