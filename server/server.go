@@ -3,9 +3,11 @@ package server
 import (
 	"net"
 
-	pb "github.com/zero-os/0-stor/grpc_store"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/zero-os/0-stor/server/db"
 	"github.com/zero-os/0-stor/server/db/badger"
+	"github.com/zero-os/0-stor/server/jwt"
+	pb "github.com/zero-os/0-stor/server/schema"
 	"google.golang.org/grpc"
 
 	log "github.com/Sirupsen/logrus"
@@ -28,29 +30,45 @@ type grpcServer struct {
 
 // New creates a grpc server with given DB data & meta directory
 // if authEnabled is false, JWT authentification is disabled
-func New(data, meta string, authEnabled bool, maxSizeMsg int) (StoreServer, error) {
+func New(data, meta string, jwtVerifier jwt.TokenVerifier, maxSizeMsg int) (StoreServer, error) {
 	db, err := badger.New(data, meta)
 	if err != nil {
 		return nil, err
 	}
-	return NewWithDB(db, authEnabled, maxSizeMsg)
+	return NewWithDB(db, jwtVerifier, maxSizeMsg)
 }
 
 // NewWithDB creates a grpc server with given DB object
-// if authEnabled is false, JWT authentification is disabled
-func NewWithDB(db *badger.DB, authEnabled bool, maxSizeMsg int) (StoreServer, error) {
-	if !authEnabled {
-		disableAuth()
-	}
-
+func NewWithDB(db db.DB, jwtVerifier jwt.TokenVerifier, maxSizeMsg int) (StoreServer, error) {
 	maxSizeMsg = maxSizeMsg * 1024 * 1024 //Mib to Bytes
 
-	s := &grpcServer{
-		db: db,
-		grpcServer: grpc.NewServer(
+	if db == nil {
+		panic("no database given")
+	}
+
+	s := &grpcServer{db: db}
+
+	// add authenticating middleware if verifier is provided
+	if jwtVerifier != nil {
+		s.grpcServer = grpc.NewServer(
+			grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+				streamJWTAuthInterceptor(jwtVerifier),
+				streamStatsInterceptor(),
+			)),
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				unaryJWTAuthInterceptor(jwtVerifier),
+				unaryStatsInterceptor(),
+			)),
 			grpc.MaxRecvMsgSize(maxSizeMsg),
 			grpc.MaxSendMsgSize(maxSizeMsg),
-		),
+		)
+	} else {
+		s.grpcServer = grpc.NewServer(
+			grpc.MaxRecvMsgSize(maxSizeMsg),
+			grpc.MaxSendMsgSize(maxSizeMsg),
+			grpc.StreamInterceptor(streamStatsInterceptor()),
+			grpc.UnaryInterceptor(unaryStatsInterceptor()),
+		)
 	}
 
 	pb.RegisterObjectManagerServer(s.grpcServer, NewObjectAPI(db))

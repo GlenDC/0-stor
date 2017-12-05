@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/zero-os/0-stor/client/itsyouonline"
-	pb "github.com/zero-os/0-stor/grpc_store"
+	zgrpc "github.com/zero-os/0-stor/server/grpc"
+	pb "github.com/zero-os/0-stor/server/schema"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,12 +17,20 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	// test organization
+	organization = "testorg"
+
+	// test namespace
+	namespace = "testnamespace"
+
+	// test label (full iyo namespacing)
+	label = "testorg_0stor_testnamespace"
+)
+
 func TestListObject(t *testing.T) {
-
-	server, iyoCl, org, clean := getTestGRPCServer(t)
-
-	namespace := fmt.Sprintf("%s_0stor_testnamespace", org)
-	bufList := populateDB(t, namespace, server.DB())
+	server, iyoCl, clean := getTestGRPCServer(t, organization)
+	bufList := populateDB(t, label, server.DB())
 
 	// create client connection
 	conn, err := grpc.Dial(server.Addr(), grpc.WithInsecure())
@@ -35,15 +44,15 @@ func TestListObject(t *testing.T) {
 	cl := pb.NewObjectManagerClient(conn)
 	t.Run("valid object", func(t *testing.T) {
 
-		jwt, err := iyoCl.CreateJWT("testnamespace", itsyouonline.Permission{
+		jwt, err := iyoCl.CreateJWT(namespace, itsyouonline.Permission{
 			Read: true,
 		})
 		require.NoError(t, err, "fail to generate jwt")
 
-		md := metadata.Pairs("authorization", jwt)
+		md := metadata.Pairs(zgrpc.MetaAuthKey, jwt, zgrpc.MetaLabelKey, label)
 		ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-		stream, err := cl.List(ctx, &pb.ListObjectsRequest{Label: namespace})
+		stream, err := cl.List(ctx, &pb.ListObjectsRequest{Label: label})
 		require.NoError(t, err, "can't send list request to server")
 
 		objNr := 0
@@ -66,15 +75,15 @@ func TestListObject(t *testing.T) {
 	})
 
 	t.Run("wrong permission", func(t *testing.T) {
-		jwt, err := iyoCl.CreateJWT("testnamespace", itsyouonline.Permission{
+		jwt, err := iyoCl.CreateJWT(namespace, itsyouonline.Permission{
 			Write: true,
 		})
 		require.NoError(t, err, "fail to generate jwt")
 
-		md := metadata.Pairs("authorization", jwt)
+		md := metadata.Pairs(zgrpc.MetaAuthKey, jwt, zgrpc.MetaLabelKey, label)
 		ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-		stream, err := cl.List(ctx, &pb.ListObjectsRequest{Label: namespace})
+		stream, err := cl.List(ctx, &pb.ListObjectsRequest{Label: label})
 		require.NoError(t, err, "failed to call List")
 		for {
 			_, err = stream.Recv()
@@ -91,15 +100,15 @@ func TestListObject(t *testing.T) {
 	})
 
 	t.Run("admin right", func(t *testing.T) {
-		jwt, err := iyoCl.CreateJWT("testnamespace", itsyouonline.Permission{
+		jwt, err := iyoCl.CreateJWT(namespace, itsyouonline.Permission{
 			Admin: true,
 		})
 		require.NoError(t, err, "fail to generate jwt")
 
-		md := metadata.Pairs("authorization", jwt)
+		md := metadata.Pairs(zgrpc.MetaAuthKey, jwt, zgrpc.MetaLabelKey, label)
 		ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-		stream, err := cl.List(ctx, &pb.ListObjectsRequest{Label: namespace})
+		stream, err := cl.List(ctx, &pb.ListObjectsRequest{Label: label})
 		require.NoError(t, err, "failed to call List")
 		_, err = stream.Recv()
 		require.NoError(t, err)
@@ -108,10 +117,8 @@ func TestListObject(t *testing.T) {
 }
 
 func TestCheckObject(t *testing.T) {
-	server, iyoCl, org, clean := getTestGRPCServer(t)
-
-	namespace := fmt.Sprintf("%s_0stor_testnamespace", org)
-	populateDB(t, namespace, server.DB())
+	server, iyoCl, clean := getTestGRPCServer(t, organization)
+	populateDB(t, label, server.DB())
 
 	// create client connection
 	conn, err := grpc.Dial(server.Addr(), grpc.WithInsecure())
@@ -123,7 +130,7 @@ func TestCheckObject(t *testing.T) {
 	}()
 
 	cl := pb.NewObjectManagerClient(conn)
-	jwt, err := iyoCl.CreateJWT("testnamespace", itsyouonline.Permission{
+	jwt, err := iyoCl.CreateJWT(namespace, itsyouonline.Permission{
 		Read: true,
 	})
 	require.NoError(t, err, "fail to generate jwt")
@@ -146,11 +153,11 @@ func TestCheckObject(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		md := metadata.Pairs("authorization", jwt)
+		md := metadata.Pairs(zgrpc.MetaAuthKey, jwt, zgrpc.MetaLabelKey, label)
 		ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 		stream, err := cl.Check(ctx, &pb.CheckRequest{
-			Label: namespace,
+			Label: label,
 			Ids:   tc.keys,
 		})
 		require.NoError(t, err, "fail to send check request")

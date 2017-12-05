@@ -22,10 +22,30 @@ matrix:
       dist: trusty
       go: 1.8
       install: skip
-      script: make
+      script:
+        - make
+        - make test
+
+    - language: go
+      sudo: true
+      dist: trusty
+      go: 1.9
+      install: skip
+      script:
+        - make
+        - make test
+
+    - language: go
+      sudo: true
+      dist: trusty
+      go: 1.9
+      install: skip
+      script: make testcov
+      after_success: bash <(curl -s https://codecov.io/bash) -F unittests
 
     - language: go
       go: 1.9
+      install: skip
       script:
         - go vet $(go list ./... | grep -v vendor)
         - diff -u <(echo -n) <(gofmt -d $(find . -name "*\.go" | grep -v '\.git/' | grep -v vendor))

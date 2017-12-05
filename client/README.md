@@ -60,7 +60,6 @@ The reference list for example, can be used to allow the client to do deduplicat
 	type Meta struct {
 		Epoch     int64  # creation epoch
 		Key       []byte # key used in the 0-stor
-		EncrKey   []byte # Encryption key used to encrypt this file
 		Chunks    []*Chunk # list of chunks of the files
 		Previous  []byte   # Key to the previous metadata entry
 		Next      []byte   # Key to the next metadata entry
@@ -88,7 +87,7 @@ calling `WriteWithMeta` or `WriteFWithMeta` methods.
 
 ## Getting started
 
-- [Getting started](../cmd/zerostorcli/README.md)
+- [Getting started](../cmd/zstor/README.md)
 
 ## Now into some technical details!
 
@@ -97,12 +96,12 @@ calling `WriteWithMeta` or `WriteFWithMeta` methods.
 - Client does some preprocessing on each chunk of data before sending them to 0stor
 - This is achieved by configuring a policy during client creation
 - Supported Data Preprocessing:
-    - [chunker](./lib/chunker)
-	- [compression](./lib/compress/README.md)
-    - [Hasher](./lib/hash/README.md)
-    - [encryption](./lib/encrypt/README.md)
-    - [distribution / erasure coding](./lib/distribution/README.md)
-    - [replication](./lib/replication/README.md)
+    - [chunker](./components/chunker)
+	- [compression](./components/compress/README.md)
+    - [Hasher](./components/hash/README.md)
+    - [encryption](./components/encrypt/README.md)
+    - [distribution / erasure coding](./components/distribution/README.md)
+    - [replication](./components/replication/README.md)
 
 **walk over the metadata**
 
@@ -233,17 +232,15 @@ func main() {
 
 ## Configuration
 
-Configuration file example can be found on [config.yaml](/cmd/zerostorcli/config.yaml).
+Configuration file example can be found on [config.yaml](/cmd/zstor/config.yaml).
 
 ## Libraries
 
-This client some libraries that can be used independently.
-See [lib](./lib) directory for more details.
+This client includes some components that can be used independently.
+See [components](./components) directory for more details.
 
 ## CLI
 
-A simple cli can be found in the [cli](./cmd/zerostorcli) directory.
+A cli can be found in the [cli](./cmd/zstor) directory.
 
-## Daemon
-
-There will be a client daemon in the [daemon](./cmd/daemon) directory.
+This command-line client includes a command to spawn it as a daemon.

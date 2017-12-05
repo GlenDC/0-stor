@@ -5,10 +5,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	pb "github.com/zero-os/0-stor/grpc_store"
 	"github.com/zero-os/0-stor/server/db"
 	"github.com/zero-os/0-stor/server/manager"
-	"github.com/zero-os/0-stor/server/stats"
+	pb "github.com/zero-os/0-stor/server/schema"
 )
 
 var _ (pb.ObjectManagerServer) = (*ObjectAPI)(nil)
@@ -18,6 +17,10 @@ type ObjectAPI struct {
 }
 
 func NewObjectAPI(db db.DB) *ObjectAPI {
+	if db == nil {
+		panic("no database given to ObjectAPI")
+	}
+
 	return &ObjectAPI{
 		db: db,
 	}
@@ -25,13 +28,6 @@ func NewObjectAPI(db db.DB) *ObjectAPI {
 
 func (api *ObjectAPI) Create(ctx context.Context, req *pb.CreateObjectRequest) (*pb.CreateObjectReply, error) {
 	label := req.GetLabel()
-
-	// increase request counter
-	go stats.IncrWrite(label)
-
-	if err := validateJWT(ctx, MethodWrite, label); err != nil {
-		return nil, err
-	}
 
 	obj := req.GetObject()
 
@@ -47,13 +43,6 @@ func (api *ObjectAPI) Create(ctx context.Context, req *pb.CreateObjectRequest) (
 func (api *ObjectAPI) List(req *pb.ListObjectsRequest, stream pb.ObjectManager_ListServer) error {
 
 	label := req.GetLabel()
-
-	// increase rate counter
-	go stats.IncrRead(label)
-
-	if err := validateJWT(stream.Context(), MethodRead, label); err != nil {
-		return err
-	}
 
 	mgr := manager.NewObjectManager(label, api.db)
 
@@ -80,15 +69,9 @@ func (api *ObjectAPI) List(req *pb.ListObjectsRequest, stream pb.ObjectManager_L
 
 	return nil
 }
+
 func (api *ObjectAPI) Get(ctx context.Context, req *pb.GetObjectRequest) (*pb.GetObjectReply, error) {
 	label, key := req.GetLabel(), req.GetKey()
-
-	if err := validateJWT(ctx, MethodRead, label); err != nil {
-		return nil, err
-	}
-
-	// increase rate counter
-	go stats.IncrRead(label)
 
 	mgr := manager.NewObjectManager(label, api.db)
 
@@ -110,13 +93,6 @@ func (api *ObjectAPI) Get(ctx context.Context, req *pb.GetObjectRequest) (*pb.Ge
 func (api *ObjectAPI) Exists(ctx context.Context, req *pb.ExistsObjectRequest) (*pb.ExistsObjectReply, error) {
 	label, key := req.GetLabel(), req.GetKey()
 
-	// increase rate counter
-	go stats.IncrRead(label)
-
-	if err := validateJWT(ctx, MethodRead, label); err != nil {
-		return nil, err
-	}
-
 	mgr := manager.NewObjectManager(label, api.db)
 
 	exists, err := mgr.Exists([]byte(key))
@@ -132,13 +108,6 @@ func (api *ObjectAPI) Exists(ctx context.Context, req *pb.ExistsObjectRequest) (
 func (api *ObjectAPI) Delete(ctx context.Context, req *pb.DeleteObjectRequest) (*pb.DeleteObjectReply, error) {
 	label, key := req.GetLabel(), req.GetKey()
 
-	// increase rate counter
-	go stats.IncrWrite(label)
-
-	if err := validateJWT(ctx, MethodDelete, label); err != nil {
-		return nil, err
-	}
-
 	mgr := manager.NewObjectManager(label, api.db)
 
 	if err := mgr.Delete([]byte(key)); err != nil {
@@ -151,13 +120,6 @@ func (api *ObjectAPI) Delete(ctx context.Context, req *pb.DeleteObjectRequest) (
 // SetReferenceList replace the complete reference list for the object
 func (api *ObjectAPI) SetReferenceList(ctx context.Context, req *pb.UpdateReferenceListRequest) (*pb.UpdateReferenceListReply, error) {
 	label, key, refList := req.GetLabel(), req.GetKey(), req.GetReferenceList()
-
-	// increase rate counter
-	go stats.IncrWrite(label)
-
-	if err := validateJWT(ctx, MethodWrite, label); err != nil {
-		return nil, err
-	}
 
 	if len(refList) > db.RefIDCount {
 		return nil, fmt.Errorf("too big reference list = %v", len(refList))
@@ -173,13 +135,6 @@ func (api *ObjectAPI) SetReferenceList(ctx context.Context, req *pb.UpdateRefere
 func (api *ObjectAPI) AppendReferenceList(ctx context.Context, req *pb.UpdateReferenceListRequest) (*pb.UpdateReferenceListReply, error) {
 	label, key, refList := req.GetLabel(), req.GetKey(), req.GetReferenceList()
 
-	// increase rate counter
-	go stats.IncrWrite(label)
-
-	if err := validateJWT(ctx, MethodWrite, label); err != nil {
-		return nil, err
-	}
-
 	if len(refList) > db.RefIDCount {
 		return nil, fmt.Errorf("too big reference list = %v", len(refList))
 	}
@@ -194,13 +149,6 @@ func (api *ObjectAPI) AppendReferenceList(ctx context.Context, req *pb.UpdateRef
 func (api *ObjectAPI) RemoveReferenceList(ctx context.Context, req *pb.UpdateReferenceListRequest) (*pb.UpdateReferenceListReply, error) {
 	label, key, refList := req.GetLabel(), req.GetKey(), req.GetReferenceList()
 
-	// increase rate counter
-	go stats.IncrWrite(label)
-
-	if err := validateJWT(ctx, MethodWrite, label); err != nil {
-		return nil, err
-	}
-
 	if len(refList) > db.RefIDCount {
 		return nil, fmt.Errorf("too big reference list = %v", len(refList))
 	}
@@ -213,13 +161,6 @@ func (api *ObjectAPI) RemoveReferenceList(ctx context.Context, req *pb.UpdateRef
 
 func (api *ObjectAPI) Check(req *pb.CheckRequest, stream pb.ObjectManager_CheckServer) error {
 	label, ids := req.GetLabel(), req.GetIds()
-
-	// increase rate counter
-	go stats.IncrWrite(label)
-
-	if err := validateJWT(stream.Context(), MethodRead, label); err != nil {
-		return err
-	}
 
 	mgr := manager.NewObjectManager(label, api.db)
 

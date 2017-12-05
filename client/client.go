@@ -11,16 +11,16 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/zero-os/0-stor/client/lib"
+	"github.com/zero-os/0-stor/client/components"
 	"github.com/zero-os/0-stor/client/meta/etcd"
 
+	"github.com/zero-os/0-stor/client/components/chunker"
+	"github.com/zero-os/0-stor/client/components/distribution"
+	"github.com/zero-os/0-stor/client/components/encrypt"
 	"github.com/zero-os/0-stor/client/itsyouonline"
-	"github.com/zero-os/0-stor/client/lib/chunker"
-	"github.com/zero-os/0-stor/client/lib/distribution"
-	"github.com/zero-os/0-stor/client/lib/encrypt"
 	"github.com/zero-os/0-stor/client/meta"
 	"github.com/zero-os/0-stor/client/stor"
-	pb "github.com/zero-os/0-stor/grpc_store"
+	pb "github.com/zero-os/0-stor/server/schema"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/snappy"
@@ -206,7 +206,6 @@ func (c *Client) writeFWithMeta(key []byte, r io.Reader, prevKey []byte, prevMet
 
 		if c.policy.Encrypt {
 			block, err = aesgm.Encrypt(block)
-			md.EncrKey = []byte(c.policy.EncryptKey)
 			chunk.Size = uint64(len(block))
 		}
 
@@ -520,7 +519,7 @@ func (c *Client) replicateWrite(key, value []byte, referenceList []string) ([]st
 		okShards   = make([]string, 0, c.policy.ReplicationNr)
 		wg         sync.WaitGroup
 		mu         sync.Mutex
-		shardErr   = &lib.ShardError{}
+		shardErr   = &components.ShardError{}
 		cJob       = make(chan *Job)
 	)
 
@@ -537,7 +536,7 @@ func (c *Client) replicateWrite(key, value []byte, referenceList []string) ([]st
 				err := job.client.ObjectCreate(key, value, referenceList)
 				if err != nil {
 					log.Errorf("replication write: error writing to store %s: %v", job.shard, err)
-					shardErr.Add([]string{job.shard}, lib.ShardType0Stor, err, 0)
+					shardErr.Add([]string{job.shard}, components.ShardType0Stor, err, 0)
 					return
 				}
 				mu.Lock()
@@ -578,7 +577,7 @@ func (c *Client) replicateWrite(key, value []byte, referenceList []string) ([]st
 			err = cl.ObjectCreate(key, value, referenceList)
 			if err != nil {
 				log.Errorf("replication write: error writing to store %s: %v", shard, err)
-				shardErr.Add([]string{shard}, lib.ShardType0Stor, err, 0)
+				shardErr.Add([]string{shard}, components.ShardType0Stor, err, 0)
 				usedShards = append(usedShards, shard)
 				continue
 			}
@@ -670,7 +669,7 @@ func (c *Client) distributeWrite(key, value []byte, referenceList []string) ([]s
 		cJob       = make(chan *Job)
 		usedShards = make([]string, 0, len(parts))
 		size       = uint64(0)
-		shardErr   = &lib.ShardError{}
+		shardErr   = &components.ShardError{}
 		wg         sync.WaitGroup
 	)
 
@@ -687,7 +686,7 @@ func (c *Client) distributeWrite(key, value []byte, referenceList []string) ([]s
 				err := job.client.ObjectCreate(key, job.part, referenceList)
 				if err != nil {
 					log.Errorf("error writing to stor: %v", err)
-					shardErr.Add([]string{job.shard}, lib.ShardType0Stor, err, 0)
+					shardErr.Add([]string{job.shard}, components.ShardType0Stor, err, 0)
 				}
 			}(job)
 		}
@@ -699,7 +698,7 @@ func (c *Client) distributeWrite(key, value []byte, referenceList []string) ([]s
 			if err == errNoDataShardAvailable {
 				return nil, 0, shardErr
 			}
-			shardErr.Add([]string{shard}, lib.ShardType0Stor, err, 0)
+			shardErr.Add([]string{shard}, components.ShardType0Stor, err, 0)
 			continue
 		}
 
@@ -736,7 +735,7 @@ func (c *Client) distributeRead(key []byte, originalSize int, shards []string) (
 
 	var (
 		wg           = sync.WaitGroup{}
-		shardErr     = &lib.ShardError{}
+		shardErr     = &components.ShardError{}
 		parts        = make([][]byte, len(shards))
 		refListSlice = make([][]string, len(shards))
 	)
@@ -748,14 +747,14 @@ func (c *Client) distributeRead(key []byte, originalSize int, shards []string) (
 
 			cl, err := c.getStor(shard)
 			if err != nil {
-				shardErr.Add([]string{shard}, lib.ShardType0Stor, err, 0)
+				shardErr.Add([]string{shard}, components.ShardType0Stor, err, 0)
 				return
 			}
 
 			obj, err := cl.ObjectGet(key)
 			if err != nil {
 
-				shardErr.Add([]string{shard}, lib.ShardType0Stor, err, 0)
+				shardErr.Add([]string{shard}, components.ShardType0Stor, err, 0)
 				return
 			}
 

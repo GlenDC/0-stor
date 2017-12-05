@@ -26,12 +26,6 @@
   revision = "30d10be492927e2dcae0089c374c455d42414fcb"
 
 [[projects]]
-  name = "github.com/codegangsta/cli"
-  packages = ["."]
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
-
-[[projects]]
   name = "github.com/coreos/bbolt"
   packages = ["."]
   revision = "583e8937c61f1af6513608ccc75c97b6abdf4ff9"
@@ -71,7 +65,7 @@
   branch = "master"
   name = "github.com/dgraph-io/badger"
   packages = [".","options","protos","skl","table","y"]
-  revision = "bd9447c51360d3a3ca6c206be5bc2e42eba4c737"
+  revision = "a233a7ded2fbb6c3025c348b68b9dd5db3c4f63b"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
@@ -122,6 +116,12 @@
   revision = "316fb6d3f031ae8f4d457c6c5186b9e3ded70435"
 
 [[projects]]
+  branch = "better_docs"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = ["."]
+  revision = "63e69ea2fcaa6764e67826381756e528db9203ab"
+
+[[projects]]
   name = "github.com/grpc-ecosystem/go-grpc-prometheus"
   packages = ["."]
   revision = "6b7015e65d366bf3f19b2b2a000a831940f0f7e0"
@@ -134,10 +134,16 @@
   version = "v1.3.0"
 
 [[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/itsyouonline/identityserver"
   packages = ["clients/go/itsyouonline","clients/go/itsyouonline/goraml"]
-  revision = "ba1ce747b617cc6e22285cf3a1c3b8f29af1074c"
+  revision = "0bef5af0c677792b39d45ae66f2043f197e215de"
 
 [[projects]]
   name = "github.com/jonboulle/clockwork"
@@ -225,6 +231,18 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "1be1d2841c773c01bee8289f55f7463b6e2c2539"
+
+[[projects]]
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/stretchr/testify"
   packages = ["assert","require"]
   revision = "2aa2c176b9dab406a6970f6a55f513e8a8c8b18f"
@@ -238,12 +256,6 @@
   name = "github.com/ugorji/go"
   packages = ["codec"]
   revision = "ded73eae5db7e7a0ef6f55aace87a2873c5d2b74"
-
-[[projects]]
-  name = "github.com/urfave/cli"
-  packages = ["."]
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
 
 [[projects]]
   name = "github.com/xiang90/probing"
@@ -308,6 +320,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2a242eec227ce66e942760819fdf1228c706eaa9fde7ac1af4a103312f0d5bfa"
+  inputs-digest = "e002a8e2585dca3ec6d8651719475feb9224f9aaf7fb924fe7907d9037167e97"
   solver-name = "gps-cdcl"
   solver-version = 1

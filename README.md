@@ -1,10 +1,10 @@
 # 0-stor
 
-[![Build Status](https://travis-ci.org/zero-os/0-stor.svg?branch=master)](https://travis-ci.org/zero-os/0-stor)
+[![GoDoc](https://godoc.org/github.com/zero-os/0-stor?status.svg)](https://godoc.org/github.com/zero-os/0-stor) [![Build Status](https://travis-ci.org/zero-os/0-stor.png?branch=master)](https://travis-ci.org/zero-os/0-stor) [![codecov](https://codecov.io/gh/zero-os/0-stor/branch/master/graph/badge.svg)](https://codecov.io/gh/zero-os/0-stor) [![Sourcegraph](https://sourcegraph.com/github.com/zero-os/0-stor/-/badge.svg)](https://sourcegraph.com/github.com/zero-os/0-stor?badge)
 
 A Single device object store.
 
-[link to group on telegram](https://t.me/joinchat/BwOvOw2-K4AN7p9VZckpFw)
+[link to group on telegram](https://t.me/joinchat/BrOCOUGHeT035il_qrwQ2A)
 
 ## Components
 
@@ -15,9 +15,11 @@ The 0-stor server is a generic object store that provide simple storage primitiv
 0-stor uses [badger](https://github.com/dgraph-io/badger) as the backend key value store. Badger allows storing the keys and the value onto separate devices. Because of this separation, the LSM (Log-Structured Merge) tree of keys can most of the time stay in memory. Typically the keys could be kept in memory and depending on the use case, the values could be served from an SSD or HDD.
 
 ### Installation
+
 Install the 0-stor server
+
 ```
-go get -u github.com/zero-os/0-stor/cmd/zerostorserver
+go get -u github.com/zero-os/0-stor/cmd/zstordb
 ```
 
 ### How to run the server
@@ -25,23 +27,23 @@ go get -u github.com/zero-os/0-stor/cmd/zerostorserver
 ## Running the server
 
 Here are the options of the server:
-```
-   --debug, -d               Enable debug logging
-   --bind value, -b value    Bind address (default: ":8080")
-   --data value              Data directory (default: ".db/data")
-   --meta value              Metadata directory (default: ".db/meta")
-   --profile-addr value      Enables profiling of this server as an http service
-   --auth-disable            Disable JWT authentification [$STOR_TESTING]
-   --max-msg-size value      Configure the maximum size of the message GRPC server can receive, in MiB (default: 32)
-   --async-write             enable asynchronous writes (default: false)
-   --help, -h                show help
-   --version, -v             print the version
 
+```
+      --async-write           Enable asynchronous writes in BadgerDB.
+      --data-dir string       Directory path used to store the data. (default ".db/data")
+  -D, --debug                 Enable debug logging.
+  -h, --help                  help for zstordb
+      --max-msg-size int      Configure the maximum size of the message GRPC server can receive, in MiB (default 32)
+      --meta-dir string       Directory path used to store the meta data. (default ".db/meta")
+      --no-auth               Disable JWT authentication.
+  -L, --listen string         Bind the server to the given host and port. Format has to be host:port, with host optional (default ":8080")
+      --profile-addr string   Enables profiling of this server as an http service.
 ```
 
 Start the server with listening on all interfaces and port 12345
+
 ```shell
-./zerostorserver --bind :12345 --data /path/to/data --meta /path/to/meta
+zstordb --listen :12345 --data-dir /path/to/data --meta-dir /path/to/meta
 ```
 
 ## Client
