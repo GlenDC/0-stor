@@ -254,9 +254,10 @@ class ZtorCluster:
 
     def __init__(self, config_file):
         self.config = yaml.load(open(config_file, 'r'))
-        self.config['organization'] = os.environ['IYO_ORGANIZATION']
-        self.config['iyo_app_id'] = os.environ['IYO_APP_ID']
-        self.config['iyo_app_secret'] = os.environ['IYO_APP_SECRET']
+        self.config['organization'] = os.environ['iyo_organization']
+        self.config['iyo_app_id'] = os.environ['iyo_client_id']
+        self.config['iyo_app_secret'] = os.environ['iyo_secret']
+        self.config['namespace'] = os.environ['iyo_namespace']
 
         self.bin_dir = os.environ['GOPATH'] + '/src/github.com/zero-os/0-stor/bin'
 
@@ -319,10 +320,10 @@ class ZtorCluster:
 
             dirname = sdir.name
             print('start zerostorserver on dir', dirname)
-            serv = subprocess.Popen([self.bin_dir + '/zerostorserver',
-                                    '-b', addr,
-                                     '--data', '{}/data'.format(dirname),
-                                     '--meta', '{}/meta'.format(dirname)],
+            serv = subprocess.Popen([self.bin_dir + '/zstordb',
+                                    '-L', addr,
+                                     '--data-dir', '{}/data'.format(dirname),
+                                     '--meta-dir', '{}/meta'.format(dirname)],
                                     cwd=dirname)
             self.ztorservers.append(serv)
 
@@ -343,9 +344,9 @@ class Proxy:
         self.proxy_addr = proxy_addr
 
     def start(self):
-        self._proxy = subprocess.Popen([self.bin_dir + '/ztorproxy',
+        self._proxy = subprocess.Popen([self.bin_dir + '/zstor', 'daemon',
                                        '--config', self.config_file,
-                                        '--address', self.proxy_addr])
+                                        '--listen', self.proxy_addr])
 
     def stop(self):
         self._proxy.kill()

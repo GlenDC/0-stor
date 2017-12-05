@@ -17,6 +17,18 @@ matrix:
       after_script:
         - bash test/deploy_test_env/run_tests.sh after
 
+    - language: Go
+      sudo: true
+      dist: trusty
+      go: 1.9
+      install:
+        - sudo apt-get install -y python3 python3-pip
+        - sudo pip3 install -r proxy/python/requirements.txt
+        - ./utils/scripts/install_etcd_linux.sh
+      script:
+        - make
+        - cd proxy/python; nose2
+
     - language: go
       sudo: true
       dist: trusty

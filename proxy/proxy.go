@@ -8,12 +8,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Proxy represents a client proxy
 type Proxy struct {
 	grpcServer *grpc.Server
 	client     *client.Client
 	listener   net.Listener
 }
 
+// New creates new client proxy
 func New(pol client.Policy) (*Proxy, error) {
 	client, err := client.New(pol)
 	if err != nil {
@@ -31,15 +33,12 @@ func New(pol client.Policy) (*Proxy, error) {
 	return proxy, nil
 }
 
-func (p *Proxy) Listen(addr string) (listenAddr string, err error) {
+// Listen listens to specified address
+func (p *Proxy) Listen(addr string) (err error) {
 	p.listener, err = net.Listen("tcp", addr)
 	if err != nil {
 		return
 	}
 
-	go p.grpcServer.Serve(p.listener)
-
-	listenAddr = p.listener.Addr().String()
-
-	return
+	return p.grpcServer.Serve(p.listener)
 }

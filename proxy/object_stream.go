@@ -28,20 +28,26 @@ func newWriteStreamReader(stream pb.ObjectService_WriteStreamServer) (*writeStre
 func (sr *writeStreamReader) Read(dest []byte) (int, error) {
 	wantLen := len(dest)
 	if len(sr.buff) >= wantLen {
-		return sr.getValFromBuf(dest, wantLen)
+		return sr.getValFromBuf(dest, wantLen), nil
 	}
+
 	for len(sr.buff) < wantLen {
 		req, err := sr.stream.Recv()
 		if err != nil {
-			return 0, err
+			return sr.getValFromBuf(dest, wantLen), err
 		}
 		sr.buff = append(sr.buff, req.Value...)
 	}
-	return sr.getValFromBuf(dest, wantLen)
+
+	return sr.getValFromBuf(dest, wantLen), nil
 }
 
 // read value from our internal buffer
-func (sr *writeStreamReader) getValFromBuf(dest []byte, wantLen int) (int, error) {
+func (sr *writeStreamReader) getValFromBuf(dest []byte, wantLen int) int {
+	if len(sr.buff) == 0 {
+		return 0
+	}
+
 	readLen := wantLen
 	if len(sr.buff) < wantLen {
 		readLen = len(sr.buff)
@@ -49,7 +55,7 @@ func (sr *writeStreamReader) getValFromBuf(dest []byte, wantLen int) (int, error
 
 	copy(dest, sr.buff[:readLen])
 	sr.buff = sr.buff[readLen:]
-	return readLen, nil
+	return readLen
 }
 
 // readStreamWriter is io.Writer implementations

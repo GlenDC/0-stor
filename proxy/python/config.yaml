@@ -1,5 +1,5 @@
 organization:          # itsyou.online organization name
-namespace: thedisk       # itsyou.online namespace
+namespace:        # itsyou.online namespace
 iyo_app_id:
 iyo_app_secret:
 # the address(es) of 0-stor server

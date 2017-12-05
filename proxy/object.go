@@ -347,7 +347,6 @@ func pbMetaToStorMeta(pbMeta *pb.Meta) *meta.Meta {
 	return &meta.Meta{
 		Epoch:     pbMeta.Epoch,
 		Key:       []byte(pbMeta.Key),
-		EncrKey:   []byte(pbMeta.EncrKey),
 		Chunks:    pbChunksToStorChunks(pbMeta.Chunks),
 		Previous:  []byte(pbMeta.Previous),
 		Next:      []byte(pbMeta.Next),
@@ -382,7 +381,6 @@ func storMetaToPbMeta(storMeta *meta.Meta) *pb.Meta {
 	return &pb.Meta{
 		Epoch:     storMeta.Epoch,
 		Key:       storMeta.Key,
-		EncrKey:   storMeta.EncrKey,
 		Chunks:    storChunksToPbChunks(storMeta.Chunks),
 		Previous:  storMeta.Previous,
 		Next:      storMeta.Next,
