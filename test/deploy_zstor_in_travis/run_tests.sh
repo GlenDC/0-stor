@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+action=$1
 if [ "$TRAVIS_EVENT_TYPE" == "cron" ] || [ "$TRAVIS_EVENT_TYPE" == "api" ]; then
-
     if [ "$action" == "before" ]; then
         echo "[+] Deploy zstordb servers"
         sudo bash test/deploy_zstor_in_travis/manual_deployment.sh  ${number_of_servers} ${iyo_client_id} ${iyo_secret} ${iyo_organization} ${iyo_namespace}

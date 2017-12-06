@@ -13,7 +13,7 @@ matrix:
       before_script:
         - bash test/deploy_zstor_in_travis/run_tests.sh before
       script:
-        - bash test/deploy_zstor_in_travis/run_tests.sh test $TEST_CASE
+        - bash test/deploy_zstor_in_travis/run_tests.sh test
 
     - language: go
       sudo: true
