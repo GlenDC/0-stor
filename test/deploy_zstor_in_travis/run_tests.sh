@@ -8,5 +8,5 @@ if [ "$TRAVIS_EVENT_TYPE" == "cron" ] || [ "$TRAVIS_EVENT_TYPE" == "api" ]; then
     elif [ "$action" == "test" ]; then
         echo " [*] Execute test case"
         cd test && export PYTHONPATH='./' && nosetests-3.4 -vs --logging-level=WARNING --progressive-with-bar --rednose $TEST_CASE --tc-file test_suite/config.ini --tc=main.number_of_servers:${number_of_servers} --tc=main.number_of_files:${number_of_files} --tc=main.default_config_path:${default_config_path} --tc=main.iyo_user2_id:${iyo_user2_id} --tc=main.iyo_user2_secret:${iyo_user2_secret} --tc=main.iyo_user2_username:${iyo_user2_username}
-    if
+    fi
 fi
