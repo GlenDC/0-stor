@@ -16,13 +16,13 @@ PROXY_ADDR = '127.0.0.1:12121'
 DELETER_PROXY_ADDR = '127.0.0.1:12122'
 BLOCK_SIZE = 4096
 
-class ProxyTest(unittest.TestCase):
+class DaemonTest(unittest.TestCase):
     """
-    ProxyTest is class to test 0-stor proxy
+    DaemonTest is class to test 0-stor daemon
     """
     @classmethod
     def setUpClass(self):
-        config_file = os.environ['GOPATH'] + '/src/github.com/zero-os/0-stor/proxy/python/config.yaml'
+        config_file = os.environ['GOPATH'] + '/src/github.com/zero-os/0-stor/daemon/python/config.yaml'
         self.cluster = ZtorCluster(config_file)
         self.cluster.start()
         self.zt = ztor(PROXY_ADDR)
@@ -108,7 +108,7 @@ class ProxyTest(unittest.TestCase):
             yield bytes(chunk, 'utf-8')
 
     def test_write_stream(self):
-        # test write stream to proxy
+        # test write stream to daemon
         print('test_write_stream')
 
         key = bytes('write_stream_key', 'utf-8')
@@ -238,10 +238,10 @@ class ProxyTest(unittest.TestCase):
 
     def corrupt_data(self, key):
         # TODO : we can
-        dp = DeleterProxy(self.cluster.bin_dir, self.cluster.proxy.config_file,
+        dp = DeleterDaemon(self.cluster.bin_dir, self.cluster.daemon.config_file,
                           DELETER_PROXY_ADDR)
         dp.start()
-        zt = ztor(dp.proxy_addr)
+        zt = ztor(dp.daemon_addr)
         zt.object.write(key, bytes(1))
         dp.stop()
 
@@ -269,13 +269,13 @@ class ZtorCluster:
         """ compile all 0-stor binaries"""
         # TODO : make it smarter because we loss time for compiling
         print('compiling all binaries')
-        c = delegator.run('cd ../../; make server proxy', block=True)
+        c = delegator.run('cd ../../; make server daemon', block=True)
         print(c.out)
 
     def start(self):
         self.start_etcd()
         self.start_ztorserver()
-        self.start_proxy()
+        self.start_daemon()
 
         # TODO better way to wait than sleeping here
         print('waiting for 0-stor cluster to be fully started')
@@ -285,7 +285,7 @@ class ZtorCluster:
     def stop(self):
         self.stop_etcd()
         self.stop_ztorserver()
-        self.stop_proxy()
+        self.stop_daemon()
 
     def start_etcd(self):
         self._etcd_dir = tempfile.TemporaryDirectory()
@@ -298,18 +298,18 @@ class ZtorCluster:
         self._etcd.kill()
         self._etcd_dir.cleanup()
 
-    def start_proxy(self):
-        self.proxy_config_file = tempfile.NamedTemporaryFile(delete=True)
-        with open(self.proxy_config_file.name, 'w') as conf_file:
+    def start_daemon(self):
+        self.daemon_config_file = tempfile.NamedTemporaryFile(delete=True)
+        with open(self.daemon_config_file.name, 'w') as conf_file:
             yaml.dump(self.config, conf_file)
 
-        self.proxy = Proxy(self.bin_dir, self.proxy_config_file.name,
+        self.daemon = Daemon(self.bin_dir, self.daemon_config_file.name,
                            PROXY_ADDR)
-        self.proxy.start()
+        self.daemon.start()
 
-    def stop_proxy(self):
-        self.proxy.stop()
-        self.proxy_config_file.close()
+    def stop_daemon(self):
+        self.daemon.stop()
+        self.daemon_config_file.close()
 
     def start_ztorserver(self):
         self.ztorserver_dirs = []
@@ -335,30 +335,30 @@ class ZtorCluster:
             sdir.cleanup()
 
 
-class Proxy:
-    # Proxy is wrapper for 0-stor proxy
+class Daemon:
+    # Daemon is wrapper for 0-stor daemon
 
-    def __init__(self, bin_dir, config_file, proxy_addr):
+    def __init__(self, bin_dir, config_file, daemon_addr):
         self.bin_dir = bin_dir
         self.config_file = config_file
-        self.proxy_addr = proxy_addr
+        self.daemon_addr = daemon_addr
 
     def start(self):
-        self._proxy = subprocess.Popen([self.bin_dir + '/zstor', 'daemon',
+        self._daemon = subprocess.Popen([self.bin_dir + '/zstor', 'daemon',
                                        '--config', self.config_file,
-                                        '--listen', self.proxy_addr])
+                                        '--listen', self.daemon_addr])
 
     def stop(self):
-        self._proxy.kill()
+        self._daemon.kill()
 
 
-class DeleterProxy(Proxy):
-    # DeleterProxy is proxy that only used to corrupt uploaded data
+class DeleterDaemon(Daemon):
+    # DeleterDaemon is daemon that only used to corrupt uploaded data
 
-    def __init__(self, bin_dir, non_deleter_conf_file, proxy_addr):
+    def __init__(self, bin_dir, non_deleter_conf_file, daemon_addr):
         conf = yaml.load(open(non_deleter_conf_file, 'r'))
 
-        # modify the proxy config
+        # modify the daemon config
         if conf['replication_nr'] != 0:
             conf['replication_nr'] -= 1
         else:
@@ -369,7 +369,7 @@ class DeleterProxy(Proxy):
         with open(conf_file.name, 'w') as f:
             yaml.dump(conf, f)
 
-        super().__init__(bin_dir, conf_file.name, proxy_addr)
+        super().__init__(bin_dir, conf_file.name, daemon_addr)
 
         self.conf_file_obj = conf_file
 

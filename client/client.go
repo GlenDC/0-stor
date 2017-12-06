@@ -256,7 +256,7 @@ func (c *Client) Read(key []byte) ([]byte, []string, error) {
 	}
 
 	w := &bytes.Buffer{}
-	refList, err := c.readFWithMeta(md, w)
+	refList, err := c.ReadFWithMeta(md, w)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -270,14 +270,14 @@ func (c *Client) ReadF(key []byte, w io.Writer) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.readFWithMeta(md, w)
+	return c.ReadFWithMeta(md, w)
 
 }
 
 // ReadWithMeta reads the value described by md
 func (c *Client) ReadWithMeta(md *meta.Meta) ([]byte, []string, error) {
 	w := &bytes.Buffer{}
-	refList, err := c.readFWithMeta(md, w)
+	refList, err := c.ReadFWithMeta(md, w)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -285,7 +285,8 @@ func (c *Client) ReadWithMeta(md *meta.Meta) ([]byte, []string, error) {
 	return w.Bytes(), refList, nil
 }
 
-func (c *Client) readFWithMeta(md *meta.Meta, w io.Writer) (refList []string, err error) {
+// ReadWithMeta reads the value described by md and write the data to w
+func (c *Client) ReadFWithMeta(md *meta.Meta, w io.Writer) (refList []string, err error) {
 	var (
 		aesgm encrypt.EncrypterDecrypter
 		block []byte

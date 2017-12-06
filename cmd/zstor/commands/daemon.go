@@ -6,13 +6,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/zero-os/0-stor/client"
 	"github.com/zero-os/0-stor/cmd"
-	"github.com/zero-os/0-stor/proxy"
+	"github.com/zero-os/0-stor/daemon"
 )
 
 // daemonCfg represents the daemon subcommand configuration
 var daemonCfg struct {
-	ListenAddress string
+	ListenAddress cmd.ListenAddress
 	Config        string
+	MaxMsgSize    int
 }
 
 // daemonCmd represents the daemon subcommand
@@ -36,16 +37,19 @@ func daemonFunc(*cobra.Command, []string) error {
 		return err
 	}
 
-	prox, err := proxy.New(policy)
+	daem, err := daemon.New(policy, daemonCfg.MaxMsgSize)
 	if err != nil {
 		return err
 	}
-	return prox.Listen(daemonCfg.ListenAddress)
+	return daem.Listen(daemonCfg.ListenAddress.String())
 }
 
 func init() {
 	daemonCmd.Flags().StringVar(
 		&daemonCfg.Config, "config", "config.yaml", "Configuration file.")
-	daemonCmd.Flags().StringVar(
-		&daemonCfg.ListenAddress, "listen", "localhost:12121", "Listen address")
+	daemonCmd.Flags().VarP(
+		&daemonCfg.ListenAddress, "listen", "L", "Bind the proxy to the given host and port. Format has to be host:port, with host optional (default :8080)")
+	daemonCmd.Flags().IntVar(
+		&daemonCfg.MaxMsgSize, "max-msg-size", 32, "Configure the maximum size of the message this daemon can receive, in MiB")
+
 }

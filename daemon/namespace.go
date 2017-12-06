@@ -1,18 +1,18 @@
-package proxy
+package daemon
 
 import (
 	"errors"
 
 	"github.com/zero-os/0-stor/client"
 	"github.com/zero-os/0-stor/client/itsyouonline"
-	pb "github.com/zero-os/0-stor/proxy/pb"
+	pb "github.com/zero-os/0-stor/daemon/pb"
 	"golang.org/x/net/context"
 )
 
 var (
-	ErrNilPermission  = errors.New("nil permission")
-	ErrEmptyNamespace = errors.New("empty namespace")
-	ErrEmptyUserID    = errors.New("empty user ID")
+	errNilPermission  = errors.New("nil permission")
+	errEmptyNamespace = errors.New("empty namespace")
+	errEmptyUserID    = errors.New("empty user ID")
 )
 
 type namespaceSrv struct {
@@ -27,11 +27,11 @@ func newNamespaceSrv(client *client.Client) *namespaceSrv {
 
 func (ns *namespaceSrv) CreateJWT(ctx context.Context, req *pb.CreateJWTRequest) (*pb.CreateJWTReply, error) {
 	if req.Namespace == "" {
-		return nil, ErrEmptyNamespace
+		return nil, errEmptyNamespace
 	}
 
 	if req.Permission == nil {
-		return nil, ErrNilPermission
+		return nil, errNilPermission
 	}
 
 	token, err := ns.client.CreateJWT(req.Namespace, pbPermToStorPerm(req.Permission))
@@ -142,13 +142,13 @@ func storPermToPbPerm(perm itsyouonline.Permission) *pb.Permission {
 // check protobuf EditPermissionRequest validity
 func checkEditPermissionRequest(req *pb.EditPermissionRequest) error {
 	if req.Namespace == "" {
-		return ErrEmptyNamespace
+		return errEmptyNamespace
 	}
 	if req.UserID == "" {
-		return ErrEmptyUserID
+		return errEmptyUserID
 	}
 	if req.Permission == nil {
-		return ErrNilPermission
+		return errNilPermission
 	}
 	return nil
 }
@@ -156,10 +156,10 @@ func checkEditPermissionRequest(req *pb.EditPermissionRequest) error {
 // check protobuf GetPermissionRequest validity
 func checkGetPermissionRequest(req *pb.GetPermissionRequest) error {
 	if req.Namespace == "" {
-		return ErrEmptyNamespace
+		return errEmptyNamespace
 	}
 	if req.UserID == "" {
-		return ErrEmptyUserID
+		return errEmptyUserID
 	}
 	return nil
 }
@@ -167,7 +167,7 @@ func checkGetPermissionRequest(req *pb.GetPermissionRequest) error {
 // check protobuf NamespaceRequest validity
 func checkNamespaceReq(req *pb.NamespaceRequest) error {
 	if req.Namespace == "" {
-		return ErrEmptyNamespace
+		return errEmptyNamespace
 	}
 	return nil
 }

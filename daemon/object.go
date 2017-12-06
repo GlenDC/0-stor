@@ -1,4 +1,4 @@
-package proxy
+package daemon
 
 import (
 	"errors"
@@ -6,17 +6,17 @@ import (
 
 	"github.com/zero-os/0-stor/client"
 	"github.com/zero-os/0-stor/client/meta"
-	pb "github.com/zero-os/0-stor/proxy/pb"
+	pb "github.com/zero-os/0-stor/daemon/pb"
 	"golang.org/x/net/context"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 var (
-	ErrNilKeyMeta   = errors.New("both key and meta are nil")
-	ErrNilFilePath  = errors.New("nil file path")
-	ErrNilKey       = errors.New("nil key")
-	ErrEmptyRefList = errors.New("empty reference list")
+	errNilKeyMeta   = errors.New("both key and meta are nil")
+	errNilFilePath  = errors.New("nil file path")
+	errNilKey       = errors.New("nil key")
+	errEmptyRefList = errors.New("empty reference list")
 )
 
 type objectSrv struct {
@@ -31,7 +31,7 @@ func newObjectSrv(client *client.Client) *objectSrv {
 
 func (osrv *objectSrv) Write(ctx context.Context, req *pb.WriteRequest) (*pb.WriteReply, error) {
 	if len(req.Key) == 0 && req.Meta == nil {
-		return nil, ErrNilKeyMeta
+		return nil, errNilKeyMeta
 	}
 
 	meta, err := osrv.client.WriteWithMeta([]byte(req.Key),
@@ -42,7 +42,6 @@ func (osrv *objectSrv) Write(ctx context.Context, req *pb.WriteRequest) (*pb.Wri
 		req.ReferenceList)
 
 	if err != nil {
-		log.Errorf("Write key %v error: %v", req.Key, err)
 		return nil, err
 	}
 
@@ -54,11 +53,11 @@ func (osrv *objectSrv) Write(ctx context.Context, req *pb.WriteRequest) (*pb.Wri
 func (osrv *objectSrv) WriteFile(ctx context.Context, req *pb.WriteFileRequest) (*pb.WriteFileReply, error) {
 	// check input
 	if len(req.Key) == 0 && req.Meta == nil {
-		return nil, ErrNilKeyMeta
+		return nil, errNilKeyMeta
 	}
 
 	if len(req.FilePath) == 0 {
-		return nil, ErrNilFilePath
+		return nil, errNilFilePath
 	}
 
 	// open the given file path
@@ -114,7 +113,7 @@ func (osrv *objectSrv) WriteStream(stream pb.ObjectService_WriteStreamServer) er
 func (osrv *objectSrv) Read(ctx context.Context, req *pb.ReadRequest) (*pb.ReadReply, error) {
 	// check input
 	if len(req.Key) == 0 && req.Meta == nil {
-		return nil, ErrNilKeyMeta
+		return nil, errNilKeyMeta
 	}
 
 	var (
@@ -141,11 +140,11 @@ func (osrv *objectSrv) Read(ctx context.Context, req *pb.ReadRequest) (*pb.ReadR
 func (osrv *objectSrv) ReadFile(ctx context.Context, req *pb.ReadFileRequest) (*pb.ReadFileReply, error) {
 	// check input
 	if len(req.Key) == 0 && req.Meta == nil {
-		return nil, ErrNilKeyMeta
+		return nil, errNilKeyMeta
 	}
 
 	if len(req.FilePath) == 0 {
-		return nil, ErrNilFilePath
+		return nil, errNilFilePath
 	}
 
 	// open the given file path
@@ -157,7 +156,7 @@ func (osrv *objectSrv) ReadFile(ctx context.Context, req *pb.ReadFileRequest) (*
 
 	var refList []string
 	if req.Meta != nil {
-		panic("need to implement the needed func")
+		refList, err = osrv.client.ReadFWithMeta(pbMetaToStorMeta(req.Meta), f)
 	} else {
 		refList, err = osrv.client.ReadF(req.Key, f)
 	}
@@ -173,7 +172,7 @@ func (osrv *objectSrv) ReadFile(ctx context.Context, req *pb.ReadFileRequest) (*
 
 func (osrv *objectSrv) ReadStream(req *pb.ReadRequest, stream pb.ObjectService_ReadStreamServer) error {
 	if len(req.Key) == 0 {
-		return ErrNilKey
+		return errNilKey
 	}
 	writer := newReadStreamWriter(stream)
 
@@ -189,7 +188,7 @@ func (osrv *objectSrv) ReadStream(req *pb.ReadRequest, stream pb.ObjectService_R
 func (osrv *objectSrv) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.NullReply, error) {
 	// check input
 	if len(req.Key) == 0 && req.Meta == nil {
-		return nil, ErrNilKeyMeta
+		return nil, errNilKeyMeta
 	}
 
 	var err error
@@ -207,7 +206,7 @@ func (osrv *objectSrv) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.N
 
 func (osrv *objectSrv) Walk(req *pb.WalkRequest, stream pb.ObjectService_WalkServer) error {
 	if len(req.StartKey) == 0 {
-		return ErrNilKey
+		return errNilKey
 	}
 
 	ch := osrv.client.Walk(req.StartKey, req.FromEpoch, req.ToEpoch)
@@ -271,7 +270,7 @@ func (osrv *objectSrv) RemoveReferenceList(ctx context.Context, req *pb.Referenc
 
 func (osrv *objectSrv) Check(ctx context.Context, req *pb.CheckRequest) (*pb.CheckReply, error) {
 	if req.Key == nil {
-		return nil, ErrNilKey
+		return nil, errNilKey
 	}
 
 	status, err := osrv.client.Check(req.Key)
@@ -286,7 +285,7 @@ func (osrv *objectSrv) Check(ctx context.Context, req *pb.CheckRequest) (*pb.Che
 
 func (osrv *objectSrv) Repair(ctx context.Context, req *pb.RepairRequest) (*pb.NullReply, error) {
 	if req.Key == nil {
-		return nil, ErrNilKey
+		return nil, errNilKey
 	}
 
 	if err := osrv.client.Repair(req.Key); err != nil {
@@ -311,10 +310,10 @@ func storCheckStatusToPb(cs client.CheckStatus) pb.CheckReply_Status {
 
 func checkReferenceListReq(req *pb.ReferenceListRequest) error {
 	if req.Key == nil && req.Meta == nil {
-		return ErrNilKeyMeta
+		return errNilKeyMeta
 	}
 	if len(req.ReferenceList) == 0 {
-		return ErrEmptyRefList
+		return errEmptyRefList
 	}
 	return nil
 }

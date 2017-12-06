@@ -31,8 +31,8 @@ class Object():
         )
         return self.stub.WriteFile(req)
 
-    def write_stream_iterator(self, key, it, ref_list=None,
-                              prev_key=None, prev_meta=None, meta=None):
+    def __write_stream_iterator(self, key, it, ref_list=None,
+                                prev_key=None, prev_meta=None, meta=None):
 
         for val in it:
             req = proxy_pb2.WriteStreamRequest(
@@ -48,8 +48,8 @@ class Object():
     def write_stream(self, key, it, ref_list=None,
                      prev_key=None, prev_meta=None, meta=None):
 
-        rpc_it = self.write_stream_iterator(key, it, ref_list, prev_key,
-                                            prev_meta, meta)
+        rpc_it = self.__write_stream_iterator(key, it, ref_list, prev_key,
+                                              prev_meta, meta)
         return self.stub.WriteStream(rpc_it)
 
     def read(self, key, meta=None):

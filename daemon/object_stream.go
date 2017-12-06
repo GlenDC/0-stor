@@ -1,9 +1,9 @@
-package proxy
+package daemon
 
 import (
 	//"io"
 
-	pb "github.com/zero-os/0-stor/proxy/pb"
+	pb "github.com/zero-os/0-stor/daemon/pb"
 )
 
 // writeStreamReader is io.Reader implementation
