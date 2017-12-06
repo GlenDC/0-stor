@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 action=$1
 
 export container_name="0-stor-test-${TRAVIS_BUILD_NUMBER}"

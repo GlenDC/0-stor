@@ -1,9 +1,26 @@
 #!/bin/bash
 NUMBER_OF_SERVERS=$1
+IYO_APP_ID=$2
+IYO_APP_SECRET=$3
+ORGANIZATION=$4
+NAMESPACE=$5
+
+check_arguments(){
+    if [ "$#" != "5" ]; then
+        echo """
+This scirpt will install all zstordb dependencies and run #NUMBER_OF_SERVERS zstordb in the local host
+starting from 8080 port, then upate the zstordb config file.
+
+Usage:
+    bash manual_deployment.sh <NUMBER_OF_SERVERS> <IYO_APP_ID> <IYO_APP_SECRET> <ORGANIZATION> <NAMESPACE>
+         """
+         exit 1
+    fi
+}
 
 update_env(){
     apt-get update
-	apt-get install -y curl vim tmux net-tools git
+	apt-get install -y curl net-tools git
 }
 
 install_go(){
@@ -36,31 +53,57 @@ run_etcd(){
     /tmp/etcd-download-test/etcd --advertise-client-urls  http://0.0.0.0:2379 --listen-client-urls http://0.0.0.0:2379 &
     echo " -------------------- ETCD CLUSTER -------------------- "
     echo "ETCD Cluster : http://0.0.0.0:2379"
-
-
 }
 
 install_zstor_server(){
     go get -u github.com/zero-os/0-stor/cmd/zstordb
-    ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstordb /bin/zstordb
+    ln -sf /gopath/bin/zstordb /bin/zstordb
     rm -rf /zstor
     mkdir /zstor
 }
 
 run_zstor_server(){
-    for ((i=0; i<$1; i++)); do
+    echo "data_shards:" > data_shards
+    for ((i=0; i<$NUMBER_OF_SERVERS; i++)); do
         port=$((8080+$i))
         zstordb -L 0.0.0.0:$port --meta-dir /zstor/meta_$port --data-dir /zstor/data_$port &
         echo " -------------------- zstor -------------------- "
         echo "ZSTOR SERVER $i : 0.0.0.0:$port"
+        echo -e "    - 127.0.0.1:$port" >> data_shards
     done    
 }
 
+update_zsrordb_config_file(){
+    echo """organization: $ORGANIZATION
+namespace: $NAMESPACE
+iyo_app_id: $IYO_APP_ID
+iyo_app_secret: $IYO_APP_SECRET
+protocol: grpc
+
+meta_shards:
+    - http://127.0.0.1:2379
+
+block_size: 4096
+replication_nr: $NUMBER_OF_SERVERS
+replication_max_size: 4096
+
+distribution_data: $(($NUMBER_OF_SERVERS-1))
+distribution_parity: 1
+
+compress: true
+encrypt: true
+encrypt_key: ab345678901234567890123456789012
+""" > /gopath/src/github.com/zero-os/0-stor/cmd/zstor/config.yaml
+cat data_shards >> /gopath/src/github.com/zero-os/0-stor/cmd/zstor/config.yaml
+rm -rf data_shards
+}
+
+check_arguments $1 $2 $3 $4 $5
 update_env
 install_go
 install_etcd
 install_zstor_server
 
 run_etcd
-run_zstor_server $NUMBER_OF_SERVERS
-
+run_zstor_server
+update_zsrordb_config_file

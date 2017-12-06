@@ -11,11 +11,9 @@ matrix:
         - curl -s https://install.zerotier.com/ | sudo bash
         - pip3 install -r test/deploy_test_env/requirements.txt
       before_script:
-        - bash test/deploy_test_env/run_tests.sh before
+        - bash test/deploy_zstor_in_travis/run_tests.sh before
       script:
-        - bash test/deploy_test_env/run_tests.sh test $TEST_CASE
-      after_script:
-        - bash test/deploy_test_env/run_tests.sh after
+        - bash test/deploy_zstor_in_travis/run_tests.sh test $TEST_CASE
 
     - language: go
       sudo: true
