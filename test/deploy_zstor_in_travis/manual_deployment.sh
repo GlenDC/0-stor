@@ -63,7 +63,7 @@ install_zstor_server(){
     git fetch
     git checkout -f ${ZSTORDB_BRANCH}
     echo " [*] Install zerostor client from branch : ${ZSTORDB_BRANCH}"
-    make .
+    make
     chmod 777 /gopath/src/github.com/zero-os/0-stor/bin
     ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstordb /bin/zstordb
     ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstor /bin/zstor    
