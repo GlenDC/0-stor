@@ -57,7 +57,9 @@ run_etcd(){
 
 install_zstor_server(){
     go get -u github.com/zero-os/0-stor/cmd/zstordb
+    go get -u github.com/zero-os/0-stor/cmd/zstor
     ln -sf /gopath/bin/zstordb /bin/zstordb
+    ln -sf /gopath/bin/zstor /bin/zstor
     rm -rf /zstor
     mkdir /zstor
 }
