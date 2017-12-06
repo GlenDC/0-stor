@@ -56,10 +56,23 @@ run_etcd(){
 }
 
 install_zstor_server(){
-    go get -u github.com/zero-os/0-stor/cmd/zstordb
-    go get -u github.com/zero-os/0-stor/cmd/zstor
-    ln -sf /gopath/bin/zstordb /bin/zstordb
-    ln -sf /gopath/bin/zstor /bin/zstor
+    mkdir -p /gopath/src/github.com
+    cp -ra /home/travis/build/zero-os /gopath/src/github.com
+    cd /gopath/src/github.com/zero-os/0-stor
+    git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+    git fetch
+    git checkout -f ${ZSTORDB_BRANCH}
+    echo " [*] Install zerostor client from branch : ${ZSTORDB_BRANCH}"
+    make .
+    chmod 777 /gopath/src/github.com/zero-os/0-stor/bin
+    ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstordb /bin/zstordb
+    ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstor /bin/zstor    
+    hash -r
+    cd /home/travis/build/zero-os/0-stor
+    git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+    git fetch
+    git checkout -f ${TESTCASE_BRANCH}    
+    echo " [*] Execute test cases from branch : ${ZSTORDB_BRANCH}"
     rm -rf /zstor
     mkdir /zstor
 }
