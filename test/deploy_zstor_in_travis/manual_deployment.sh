@@ -4,17 +4,29 @@ IYO_APP_ID=$2
 IYO_APP_SECRET=$3
 ORGANIZATION=$4
 NAMESPACE=$5
+ZSTORDB_BRANCH=$6
+TESTCASE_BRANCH=$7
 
 check_arguments(){
-    if [ "$#" != "5" ]; then
-        echo """
-This scirpt will install all zstordb dependencies and run #NUMBER_OF_SERVERS zstordb in the local host
-starting from 8080 port, then upate the zstordb config file.
+    if [ "$#" != "7" ]; then
+        echo """This scirpt will to automate the intalling process.
+It will install all zstordb dependencies, run one etcd,
+run <NUMBER_OF_SERVERS> zstordb and edit zstor config file.
 
 Usage:
-    bash manual_deployment.sh <NUMBER_OF_SERVERS> <IYO_APP_ID> <IYO_APP_SECRET> <ORGANIZATION> <NAMESPACE>
+    bash manual_deployment.sh <NUMBER_OF_SERVERS> <IYO_APP_ID> <IYO_APP_SECRET> <ORGANIZATION> <NAMESPACE> <ZSTORDB_BRANCH> <TESTCASE_BRANCH>
+
+Parameters:
+    NUMBER_OF_SERVERS = Number of running zstordb
+    IYO_APP_ID = IYO user1 client ID
+    IYO_APP_SECRET = IYO user1 client secret
+    ORGANIZATION = IYO user1 organization
+    NAMESPACE = IYO user1 namespace
+    ZSTORDB_BRANCH = Branch to make zstordb and zsotr binaries
+    TESTCASE_BRANCH = Branch to excute test cases         
          """
-         exit 1
+    
+    exit 1
     fi
 }
 
