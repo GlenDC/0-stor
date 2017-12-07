@@ -7,7 +7,6 @@
 │   ├── manual_deployment.sh
 │   ├── requirements.txt
 │   └── run_tests.sh
-├── log.log
 ├── README.md
 └── test_suite
     ├── config.ini
@@ -38,6 +37,9 @@
 You have to install an environment to run this test suite against it. You can install it manually or trigger it from the Travis dashboard.
 
 ## 1- Travis Environment:
+**Hint:**
+Triggering it with the default prameters values will use $TRAVIS_BRANCH to install zstor and run test all test cases agains it.
+
 Here is the travis pramaters description to fire the test suite:
 ```yaml
 TEST_CASE=test_suite/test_cases
@@ -54,8 +56,7 @@ default_config_path=/gopath/src/github.com/zero-os/0-stor/cmd/zstor/config.yaml
 ZSTORDB_BRANCH= <Branch to make zstordb and zsotr binaries>
 TESTCASE_BRANCH= <Branch to excute test cases>
 ```
-**Hint:**
-Fire it with the default prameters values will use $TRAVIS_BRANCH to install zstor and run test all test cases agains it.
+
 
 
 ## 2- Local Environment:
