@@ -392,6 +392,24 @@ class TestcasesBase(TestCase):
             results.append(status_code)
         return results
 
+    def create_namespace_and_accept_invitation(self, permissions, creat_config=True):
+        self.new_namespace = "xtremx_%d_%d" % (randint(1, 10000), randint(1, 10000))
+        self.assertTrue(
+            self.zero_store_cli.create_namespace(namespace=self.new_namespace, config_path=self.default_config_path))
+        self.assertTrue(self.zero_store_cli.set_user_acl(namespace=self.new_namespace, username=self.iyo_slave_username,
+                                                         permission_list=permissions,
+                                                         config_path=self.default_config_path))
+        results = self.iyo_slave_accept_invitation(namespace=self.new_namespace, permissions_list=permissions)
+
+        for status_code in results:
+            self.assertEqual(status_code, 201)
+        if creat_config:
+            config = {'iyo_app_id': self.iyo_slave_id,
+                      'iyo_app_secret': self.iyo_slave_secret,
+                      'namespace': self.new_namespace}
+            self.new_config_file_path = self.create_new_config_file(config)
+            print(colored(' [*] new config path : %s' % self.new_config_file_path, 'white'))    
+
 class Utiles:
     def __init__(self):
         self.config = {}

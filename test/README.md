@@ -111,6 +111,6 @@ nosetests-3.4 -vs test_suite/test_cases --tc-file test_suite/config.ini
 
 Example: 
 ```bash
-nosetests-3.4 -vs test_suite/test_cases/basic_tests/test01_upload_download.py:UploadDownload.test001_upload_file --tc-file test_suite/config.ini --tc=main.number_of_files:10
+nosetests-3.4 -vs test_suite/test_cases/basic_tests/test01_basic_tests.py:BasicTestCases.test001_upload_download_files --tc-file test_suite/config.ini --tc=main.number_of_files:10
 ````
 This command will execute the test001_update_file test case with number_of_files=10
