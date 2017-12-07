@@ -2,7 +2,6 @@ from test_suite.test_cases.testcases_base import TestcasesBase
 from termcolor import colored
 from random import randint
 from parameterized import parameterized
-from unittest import skip
 
 
 class BasicTestCases(TestcasesBase):
@@ -101,7 +100,6 @@ class BasicTestCases(TestcasesBase):
                            ('delete_write', ['-d', '-w']),
                            ('delete_write_read', ['-d', '-w', '-r']),
                            ])
-    @skip('https://github.com/zero-os/0-stor/issues/260')
     def test006_delete_file_by_iyo_slave_user(self, name, permissions):
         """ ZST-008
 
