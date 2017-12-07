@@ -63,7 +63,7 @@ TESTCASE_BRANCH= <Branch to excute test cases>
 **Hint:**
 You should have two IYO accounts, One as a master which will be used in the zerostor config file and the other as a slave which will be used in the test suite config file.
 
-1- Installing the local environment. There is a bash script to automate the installing process. It will install all zstordb dependencies, run one etcd, run <NUMBER_OF_SERVERS> zstordb and edit the zstor config file. To run it `cd` to the repo directory then:
+**1- Installing the local environment.** There is a bash script to automate the installing process. It will install all zstordb dependencies, run one etcd, run <NUMBER_OF_SERVERS> zstordb and edit the zstor config file. To run it `cd` to the repo directory then:
 
 ```bash
 ➜  0-stor git:(master) ✗ bash test/deploy_zstor_in_travis/manual_deployment.sh -h
@@ -85,7 +85,7 @@ Parameters:
 
 ```
 
-2- Configure the test suite config file, `cd` to the repo directory then `vim zero-os/0-stor/test/test_suite/config.ini`
+**2- Configure the test suite config file**, `cd` to the repo directory then `vim zero-os/0-stor/test/test_suite/config.ini`
 
 ```bash
 [main]
@@ -98,13 +98,13 @@ iyo_user2_secret = <IYO user2 client secret>
 iyo_user2_username = <IYO user2 email>
 ```
 
- 4- Install the testsuite requirements, `cd` to the repo directory then,
+ **3- Install the testsuite requirements,** `cd` to the repo directory then,
 ```bash
 cd 0-stor/test
 pip3 install -r deploy_test_env/requirements.txt
 ```
 
-5- Fire test suite
+**4- Fire test suite**
 ```bash
 export PYTHONPATH='./'
 nosetests-3.4 -vs test_suite/test_cases --tc-file test_suite/config.ini
