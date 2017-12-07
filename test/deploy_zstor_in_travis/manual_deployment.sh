@@ -78,21 +78,21 @@ install_zstor_server(){
     make
     chmod 777 /gopath/src/github.com/zero-os/0-stor/bin
     ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstordb /bin/zstordb
-    ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstor /bin/zstor    
+    ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstor /bin/zstor    /home/travis/build/zero-os
     hash -r
     cd /home/travis/build/zero-os/0-stor
     git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
     git fetch
     git checkout -f ${TESTCASE_BRANCH}    
-    echo " [*] Execute test cases from branch : ${ZSTORDB_BRANCH}"
+    echo " [*] Execute test cases from branch : ${ZSTORDB_BRANCH}"/home/travis/build/zero-os
     rm -rf /zstor
     mkdir /zstor
-}
+}/home/travis/build/zero-os
 
 run_zstor_server(){
     echo "data_shards:" > data_shards
     for ((i=0; i<$NUMBER_OF_SERVERS; i++)); do
-        port=$((8080+$i))
+        port=$((8080+$i))/home/travis/build/zero-os
         zstordb -L 0.0.0.0:$port --meta-dir /zstor/meta_$port --data-dir /zstor/data_$port &
         echo " -------------------- zstor -------------------- "
         echo "ZSTOR SERVER $i : 0.0.0.0:$port"

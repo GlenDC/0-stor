@@ -100,8 +100,7 @@ iyo_user2_username = <IYO user2 email>
 
  **3- Install the testsuite requirements,** `cd` to the repo directory then,
 ```bash
-cd 0-stor/test
-pip3 install -r deploy_test_env/requirements.txt
+pip3 install -r test/deploy_zstor_in_travis/requirements.txt
 ```
 
 **4- Fire test suite**
