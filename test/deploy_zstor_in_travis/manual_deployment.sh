@@ -68,8 +68,14 @@ run_etcd(){
 }
 
 install_zstor_server(){
-    mkdir -p /gopath/src/github.com
-    cp -ra /home/travis/build/zero-os /gopath/src/github.com
+    if [ "$TRAVIS_BRANCH" != "" ]
+        then
+            mkdir -p /gopath/src/github.com
+            cp -ra /home/travis/build/zero-os /gopath/src/github.com
+        else
+            mkdir -p /gopath/src/github.com/zero-os/0-stor
+            cp -ra ./ /gopath/src/github.com/zero-os/0-stor
+    fi
     cd /gopath/src/github.com/zero-os/0-stor
     git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
     git fetch
@@ -80,7 +86,7 @@ install_zstor_server(){
     ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstordb /bin/zstordb
     ln -sf /gopath/src/github.com/zero-os/0-stor/bin/zstor /bin/zstor    /home/travis/build/zero-os
     hash -r
-    cd /home/travis/build/zero-os/0-stor
+    cd -
     git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
     git fetch
     git checkout -f ${TESTCASE_BRANCH}    
