@@ -92,7 +92,7 @@ install_zstor_server(){
     echo " [*] Execute test cases from branch : ${ZSTORDB_BRANCH}"/home/travis/build/zero-os
     rm -rf /zstor
     mkdir /zstor
-}/home/travis/build/zero-os
+}
 
 run_zstor_server(){
     echo "data_shards:" > data_shards
