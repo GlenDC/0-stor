@@ -131,7 +131,7 @@ cat data_shards >> /gopath/src/github.com/zero-os/0-stor/cmd/zstor/config.yaml
 rm -rf data_shards
 }
 
-check_arguments $1 $2 $3 $4 $5
+check_arguments $1 $2 $3 $4 $5 $6 $7
 update_env
 install_go
 install_etcd
