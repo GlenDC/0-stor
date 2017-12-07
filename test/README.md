@@ -38,7 +38,7 @@ You have to install an environment to run this test suite against it. You can in
 
 ## 1- Travis Environment:
 **Hint:**
-Triggering it with the default prameters values will use $TRAVIS_BRANCH to install zstor and run test all test cases agains it.
+Triggering it with the default prameters values will use $TRAVIS_BRANCH to install zstor and run all test cases agains it.
 
 Here is the travis pramaters description to fire the test suite:
 ```yaml
