@@ -41,12 +41,10 @@ func (api *NamespaceAPI) GetNamespace(ctx context.Context, req *pb.GetNamespaceR
 	read, write := stats.Rate(label)
 
 	resp := &pb.GetNamespaceResponse{
-		Namespace: &pb.Namespace{
-			Label:               label,
-			ReadRequestPerHour:  read,
-			WriteRequestPerHour: write,
-			NrObjects:           int64(count),
-		},
+		Label:               label,
+		ReadRequestPerHour:  read,
+		WriteRequestPerHour: write,
+		NrObjects:           int64(count),
 	}
 
 	return resp, nil

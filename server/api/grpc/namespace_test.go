@@ -16,6 +16,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+// tot 11:00 gewerkt
+
 func TestGetNamespace(t *testing.T) {
 	api, clean := getTestNamespaceAPI(t)
 	defer clean()
@@ -25,13 +27,12 @@ func TestGetNamespace(t *testing.T) {
 	err = api.db.Set(db.NamespaceKey([]byte(label)), data)
 	require.NoError(t, err)
 
-	req := &pb.GetNamespaceRequest{Label: label}
-	resp, err := api.Get(context.Background(), req)
+	req := &pb.GetNamespaceRequest{}
+	resp, err := api.GetNamespace(context.Background(), req)
 	require.NoError(t, err)
 
-	ns := resp.GetNamespace()
-	assert.Equal(t, label, ns.GetLabel())
-	assert.EqualValues(t, 0, ns.GetNrObjects())
+	assert.Equal(t, label, resp.GetLabel())
+	assert.EqualValues(t, 0, resp.GetNrObjects())
 }
 
 func getTestNamespaceAPI(t *testing.T) (*NamespaceAPI, func()) {

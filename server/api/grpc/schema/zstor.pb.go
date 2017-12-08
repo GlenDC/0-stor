@@ -8,8 +8,6 @@
 		schema/zstor.proto
 
 	It has these top-level messages:
-		Namespace
-		Object
 		GetNamespaceRequest
 		GetNamespaceResponse
 		SetObjectRequest
@@ -17,6 +15,7 @@
 		GetObjectRequest
 		GetObjectResponse
 		GetObjectStreamRequest
+		GetObjectStreamResponse
 		ExistObjectRequest
 		ExistObjectResponse
 		ExistObjectStreamRequest
@@ -89,109 +88,79 @@ var ObjectStatus_value = map[string]int32{
 
 func (ObjectStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptorZstor, []int{0} }
 
-type Namespace struct {
+type GetNamespaceRequest struct {
+}
+
+func (m *GetNamespaceRequest) Reset()                    { *m = GetNamespaceRequest{} }
+func (*GetNamespaceRequest) ProtoMessage()               {}
+func (*GetNamespaceRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{0} }
+
+type GetNamespaceResponse struct {
 	Label               string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
 	ReadRequestPerHour  int64  `protobuf:"varint,2,opt,name=readRequestPerHour,proto3" json:"readRequestPerHour,omitempty"`
 	WriteRequestPerHour int64  `protobuf:"varint,3,opt,name=writeRequestPerHour,proto3" json:"writeRequestPerHour,omitempty"`
 	NrObjects           int64  `protobuf:"varint,4,opt,name=nrObjects,proto3" json:"nrObjects,omitempty"`
 }
 
-func (m *Namespace) Reset()                    { *m = Namespace{} }
-func (*Namespace) ProtoMessage()               {}
-func (*Namespace) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{0} }
+func (m *GetNamespaceResponse) Reset()                    { *m = GetNamespaceResponse{} }
+func (*GetNamespaceResponse) ProtoMessage()               {}
+func (*GetNamespaceResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{1} }
 
-func (m *Namespace) GetLabel() string {
+func (m *GetNamespaceResponse) GetLabel() string {
 	if m != nil {
 		return m.Label
 	}
 	return ""
 }
 
-func (m *Namespace) GetReadRequestPerHour() int64 {
+func (m *GetNamespaceResponse) GetReadRequestPerHour() int64 {
 	if m != nil {
 		return m.ReadRequestPerHour
 	}
 	return 0
 }
 
-func (m *Namespace) GetWriteRequestPerHour() int64 {
+func (m *GetNamespaceResponse) GetWriteRequestPerHour() int64 {
 	if m != nil {
 		return m.WriteRequestPerHour
 	}
 	return 0
 }
 
-func (m *Namespace) GetNrObjects() int64 {
+func (m *GetNamespaceResponse) GetNrObjects() int64 {
 	if m != nil {
 		return m.NrObjects
 	}
 	return 0
 }
 
-type Object struct {
+type SetObjectRequest struct {
 	Key           []byte   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value         []byte   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	ReferenceList []string `protobuf:"bytes,3,rep,name=referenceList" json:"referenceList,omitempty"`
 }
 
-func (m *Object) Reset()                    { *m = Object{} }
-func (*Object) ProtoMessage()               {}
-func (*Object) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{1} }
+func (m *SetObjectRequest) Reset()                    { *m = SetObjectRequest{} }
+func (*SetObjectRequest) ProtoMessage()               {}
+func (*SetObjectRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{2} }
 
-func (m *Object) GetKey() []byte {
+func (m *SetObjectRequest) GetKey() []byte {
 	if m != nil {
 		return m.Key
 	}
 	return nil
 }
 
-func (m *Object) GetValue() []byte {
+func (m *SetObjectRequest) GetValue() []byte {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-func (m *Object) GetReferenceList() []string {
+func (m *SetObjectRequest) GetReferenceList() []string {
 	if m != nil {
 		return m.ReferenceList
-	}
-	return nil
-}
-
-type GetNamespaceRequest struct {
-}
-
-func (m *GetNamespaceRequest) Reset()                    { *m = GetNamespaceRequest{} }
-func (*GetNamespaceRequest) ProtoMessage()               {}
-func (*GetNamespaceRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{2} }
-
-type GetNamespaceResponse struct {
-	Namespace *Namespace `protobuf:"bytes,1,opt,name=namespace" json:"namespace,omitempty"`
-}
-
-func (m *GetNamespaceResponse) Reset()                    { *m = GetNamespaceResponse{} }
-func (*GetNamespaceResponse) ProtoMessage()               {}
-func (*GetNamespaceResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{3} }
-
-func (m *GetNamespaceResponse) GetNamespace() *Namespace {
-	if m != nil {
-		return m.Namespace
-	}
-	return nil
-}
-
-type SetObjectRequest struct {
-	Object *Object `protobuf:"bytes,1,opt,name=object" json:"object,omitempty"`
-}
-
-func (m *SetObjectRequest) Reset()                    { *m = SetObjectRequest{} }
-func (*SetObjectRequest) ProtoMessage()               {}
-func (*SetObjectRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{4} }
-
-func (m *SetObjectRequest) GetObject() *Object {
-	if m != nil {
-		return m.Object
 	}
 	return nil
 }
@@ -201,7 +170,7 @@ type SetObjectResponse struct {
 
 func (m *SetObjectResponse) Reset()                    { *m = SetObjectResponse{} }
 func (*SetObjectResponse) ProtoMessage()               {}
-func (*SetObjectResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{5} }
+func (*SetObjectResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{3} }
 
 type GetObjectRequest struct {
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -209,7 +178,7 @@ type GetObjectRequest struct {
 
 func (m *GetObjectRequest) Reset()                    { *m = GetObjectRequest{} }
 func (*GetObjectRequest) ProtoMessage()               {}
-func (*GetObjectRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{6} }
+func (*GetObjectRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{4} }
 
 func (m *GetObjectRequest) GetKey() []byte {
 	if m != nil {
@@ -219,16 +188,40 @@ func (m *GetObjectRequest) GetKey() []byte {
 }
 
 type GetObjectResponse struct {
-	Object *Object `protobuf:"bytes,1,opt,name=object" json:"object,omitempty"`
+	Key           []byte       `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         []byte       `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Status        ObjectStatus `protobuf:"varint,3,opt,name=status,proto3,enum=ObjectStatus" json:"status,omitempty"`
+	ReferenceList []string     `protobuf:"bytes,4,rep,name=referenceList" json:"referenceList,omitempty"`
 }
 
 func (m *GetObjectResponse) Reset()                    { *m = GetObjectResponse{} }
 func (*GetObjectResponse) ProtoMessage()               {}
-func (*GetObjectResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{7} }
+func (*GetObjectResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{5} }
 
-func (m *GetObjectResponse) GetObject() *Object {
+func (m *GetObjectResponse) GetKey() []byte {
 	if m != nil {
-		return m.Object
+		return m.Key
+	}
+	return nil
+}
+
+func (m *GetObjectResponse) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *GetObjectResponse) GetStatus() ObjectStatus {
+	if m != nil {
+		return m.Status
+	}
+	return ObjectStatusOK
+}
+
+func (m *GetObjectResponse) GetReferenceList() []string {
+	if m != nil {
+		return m.ReferenceList
 	}
 	return nil
 }
@@ -239,11 +232,50 @@ type GetObjectStreamRequest struct {
 
 func (m *GetObjectStreamRequest) Reset()                    { *m = GetObjectStreamRequest{} }
 func (*GetObjectStreamRequest) ProtoMessage()               {}
-func (*GetObjectStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{8} }
+func (*GetObjectStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{6} }
 
 func (m *GetObjectStreamRequest) GetKeys() [][]byte {
 	if m != nil {
 		return m.Keys
+	}
+	return nil
+}
+
+type GetObjectStreamResponse struct {
+	Key           []byte       `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         []byte       `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Status        ObjectStatus `protobuf:"varint,3,opt,name=status,proto3,enum=ObjectStatus" json:"status,omitempty"`
+	ReferenceList []string     `protobuf:"bytes,4,rep,name=referenceList" json:"referenceList,omitempty"`
+}
+
+func (m *GetObjectStreamResponse) Reset()                    { *m = GetObjectStreamResponse{} }
+func (*GetObjectStreamResponse) ProtoMessage()               {}
+func (*GetObjectStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{7} }
+
+func (m *GetObjectStreamResponse) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *GetObjectStreamResponse) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *GetObjectStreamResponse) GetStatus() ObjectStatus {
+	if m != nil {
+		return m.Status
+	}
+	return ObjectStatusOK
+}
+
+func (m *GetObjectStreamResponse) GetReferenceList() []string {
+	if m != nil {
+		return m.ReferenceList
 	}
 	return nil
 }
@@ -254,7 +286,7 @@ type ExistObjectRequest struct {
 
 func (m *ExistObjectRequest) Reset()                    { *m = ExistObjectRequest{} }
 func (*ExistObjectRequest) ProtoMessage()               {}
-func (*ExistObjectRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{9} }
+func (*ExistObjectRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{8} }
 
 func (m *ExistObjectRequest) GetKey() []byte {
 	if m != nil {
@@ -269,7 +301,7 @@ type ExistObjectResponse struct {
 
 func (m *ExistObjectResponse) Reset()                    { *m = ExistObjectResponse{} }
 func (*ExistObjectResponse) ProtoMessage()               {}
-func (*ExistObjectResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{10} }
+func (*ExistObjectResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{9} }
 
 func (m *ExistObjectResponse) GetExists() bool {
 	if m != nil {
@@ -284,7 +316,7 @@ type ExistObjectStreamRequest struct {
 
 func (m *ExistObjectStreamRequest) Reset()                    { *m = ExistObjectStreamRequest{} }
 func (*ExistObjectStreamRequest) ProtoMessage()               {}
-func (*ExistObjectStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{11} }
+func (*ExistObjectStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{10} }
 
 func (m *ExistObjectStreamRequest) GetKeys() [][]byte {
 	if m != nil {
@@ -300,7 +332,7 @@ type ExistObjectStreamResponse struct {
 
 func (m *ExistObjectStreamResponse) Reset()                    { *m = ExistObjectStreamResponse{} }
 func (*ExistObjectStreamResponse) ProtoMessage()               {}
-func (*ExistObjectStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{12} }
+func (*ExistObjectStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{11} }
 
 func (m *ExistObjectStreamResponse) GetKey() []byte {
 	if m != nil {
@@ -322,7 +354,7 @@ type DeleteObjectsRequest struct {
 
 func (m *DeleteObjectsRequest) Reset()                    { *m = DeleteObjectsRequest{} }
 func (*DeleteObjectsRequest) ProtoMessage()               {}
-func (*DeleteObjectsRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{13} }
+func (*DeleteObjectsRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{12} }
 
 func (m *DeleteObjectsRequest) GetKeys() [][]byte {
 	if m != nil {
@@ -336,7 +368,7 @@ type DeleteObjectsResponse struct {
 
 func (m *DeleteObjectsResponse) Reset()                    { *m = DeleteObjectsResponse{} }
 func (*DeleteObjectsResponse) ProtoMessage()               {}
-func (*DeleteObjectsResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{14} }
+func (*DeleteObjectsResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{13} }
 
 type GetObjectStatusRequest struct {
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -344,7 +376,7 @@ type GetObjectStatusRequest struct {
 
 func (m *GetObjectStatusRequest) Reset()                    { *m = GetObjectStatusRequest{} }
 func (*GetObjectStatusRequest) ProtoMessage()               {}
-func (*GetObjectStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{15} }
+func (*GetObjectStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{14} }
 
 func (m *GetObjectStatusRequest) GetKey() []byte {
 	if m != nil {
@@ -359,7 +391,7 @@ type GetObjectStatusResponse struct {
 
 func (m *GetObjectStatusResponse) Reset()                    { *m = GetObjectStatusResponse{} }
 func (*GetObjectStatusResponse) ProtoMessage()               {}
-func (*GetObjectStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{16} }
+func (*GetObjectStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{15} }
 
 func (m *GetObjectStatusResponse) GetStatus() ObjectStatus {
 	if m != nil {
@@ -375,7 +407,7 @@ type GetObjectStatusStreamRequest struct {
 func (m *GetObjectStatusStreamRequest) Reset()      { *m = GetObjectStatusStreamRequest{} }
 func (*GetObjectStatusStreamRequest) ProtoMessage() {}
 func (*GetObjectStatusStreamRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptorZstor, []int{17}
+	return fileDescriptorZstor, []int{16}
 }
 
 func (m *GetObjectStatusStreamRequest) GetKeys() [][]byte {
@@ -393,7 +425,7 @@ type GetObjectStatusStreamResponse struct {
 func (m *GetObjectStatusStreamResponse) Reset()      { *m = GetObjectStatusStreamResponse{} }
 func (*GetObjectStatusStreamResponse) ProtoMessage() {}
 func (*GetObjectStatusStreamResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptorZstor, []int{18}
+	return fileDescriptorZstor, []int{17}
 }
 
 func (m *GetObjectStatusStreamResponse) GetKey() []byte {
@@ -415,7 +447,7 @@ type ListObjectKeyStreamRequest struct {
 
 func (m *ListObjectKeyStreamRequest) Reset()                    { *m = ListObjectKeyStreamRequest{} }
 func (*ListObjectKeyStreamRequest) ProtoMessage()               {}
-func (*ListObjectKeyStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{19} }
+func (*ListObjectKeyStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{18} }
 
 type ListObjectKeyStreamResponse struct {
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -424,7 +456,7 @@ type ListObjectKeyStreamResponse struct {
 func (m *ListObjectKeyStreamResponse) Reset()      { *m = ListObjectKeyStreamResponse{} }
 func (*ListObjectKeyStreamResponse) ProtoMessage() {}
 func (*ListObjectKeyStreamResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptorZstor, []int{20}
+	return fileDescriptorZstor, []int{19}
 }
 
 func (m *ListObjectKeyStreamResponse) GetKey() []byte {
@@ -441,7 +473,7 @@ type SetReferenceListRequest struct {
 
 func (m *SetReferenceListRequest) Reset()                    { *m = SetReferenceListRequest{} }
 func (*SetReferenceListRequest) ProtoMessage()               {}
-func (*SetReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{21} }
+func (*SetReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{20} }
 
 func (m *SetReferenceListRequest) GetKey() []byte {
 	if m != nil {
@@ -462,7 +494,7 @@ type SetReferenceListResponse struct {
 
 func (m *SetReferenceListResponse) Reset()                    { *m = SetReferenceListResponse{} }
 func (*SetReferenceListResponse) ProtoMessage()               {}
-func (*SetReferenceListResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{22} }
+func (*SetReferenceListResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{21} }
 
 type GetReferenceListRequest struct {
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -470,7 +502,7 @@ type GetReferenceListRequest struct {
 
 func (m *GetReferenceListRequest) Reset()                    { *m = GetReferenceListRequest{} }
 func (*GetReferenceListRequest) ProtoMessage()               {}
-func (*GetReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{23} }
+func (*GetReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{22} }
 
 func (m *GetReferenceListRequest) GetKey() []byte {
 	if m != nil {
@@ -480,18 +512,26 @@ func (m *GetReferenceListRequest) GetKey() []byte {
 }
 
 type GetReferenceListResponse struct {
-	ReferenceList []string `protobuf:"bytes,1,rep,name=referenceList" json:"referenceList,omitempty"`
+	ReferenceList []string     `protobuf:"bytes,1,rep,name=referenceList" json:"referenceList,omitempty"`
+	Status        ObjectStatus `protobuf:"varint,2,opt,name=status,proto3,enum=ObjectStatus" json:"status,omitempty"`
 }
 
 func (m *GetReferenceListResponse) Reset()                    { *m = GetReferenceListResponse{} }
 func (*GetReferenceListResponse) ProtoMessage()               {}
-func (*GetReferenceListResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{24} }
+func (*GetReferenceListResponse) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{23} }
 
 func (m *GetReferenceListResponse) GetReferenceList() []string {
 	if m != nil {
 		return m.ReferenceList
 	}
 	return nil
+}
+
+func (m *GetReferenceListResponse) GetStatus() ObjectStatus {
+	if m != nil {
+		return m.Status
+	}
+	return ObjectStatusOK
 }
 
 type AppendReferenceListRequest struct {
@@ -501,7 +541,7 @@ type AppendReferenceListRequest struct {
 
 func (m *AppendReferenceListRequest) Reset()                    { *m = AppendReferenceListRequest{} }
 func (*AppendReferenceListRequest) ProtoMessage()               {}
-func (*AppendReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{25} }
+func (*AppendReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{24} }
 
 func (m *AppendReferenceListRequest) GetKey() []byte {
 	if m != nil {
@@ -518,12 +558,20 @@ func (m *AppendReferenceListRequest) GetReferenceList() []string {
 }
 
 type AppendReferenceListResponse struct {
+	Status ObjectStatus `protobuf:"varint,1,opt,name=status,proto3,enum=ObjectStatus" json:"status,omitempty"`
 }
 
 func (m *AppendReferenceListResponse) Reset()      { *m = AppendReferenceListResponse{} }
 func (*AppendReferenceListResponse) ProtoMessage() {}
 func (*AppendReferenceListResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptorZstor, []int{26}
+	return fileDescriptorZstor, []int{25}
+}
+
+func (m *AppendReferenceListResponse) GetStatus() ObjectStatus {
+	if m != nil {
+		return m.Status
+	}
+	return ObjectStatusOK
 }
 
 type DeleteReferenceListRequest struct {
@@ -533,7 +581,7 @@ type DeleteReferenceListRequest struct {
 
 func (m *DeleteReferenceListRequest) Reset()                    { *m = DeleteReferenceListRequest{} }
 func (*DeleteReferenceListRequest) ProtoMessage()               {}
-func (*DeleteReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{27} }
+func (*DeleteReferenceListRequest) Descriptor() ([]byte, []int) { return fileDescriptorZstor, []int{26} }
 
 func (m *DeleteReferenceListRequest) GetKey() []byte {
 	if m != nil {
@@ -555,12 +603,10 @@ type DeleteReferenceListResponse struct {
 func (m *DeleteReferenceListResponse) Reset()      { *m = DeleteReferenceListResponse{} }
 func (*DeleteReferenceListResponse) ProtoMessage() {}
 func (*DeleteReferenceListResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptorZstor, []int{28}
+	return fileDescriptorZstor, []int{27}
 }
 
 func init() {
-	proto.RegisterType((*Namespace)(nil), "Namespace")
-	proto.RegisterType((*Object)(nil), "Object")
 	proto.RegisterType((*GetNamespaceRequest)(nil), "GetNamespaceRequest")
 	proto.RegisterType((*GetNamespaceResponse)(nil), "GetNamespaceResponse")
 	proto.RegisterType((*SetObjectRequest)(nil), "SetObjectRequest")
@@ -568,6 +614,7 @@ func init() {
 	proto.RegisterType((*GetObjectRequest)(nil), "GetObjectRequest")
 	proto.RegisterType((*GetObjectResponse)(nil), "GetObjectResponse")
 	proto.RegisterType((*GetObjectStreamRequest)(nil), "GetObjectStreamRequest")
+	proto.RegisterType((*GetObjectStreamResponse)(nil), "GetObjectStreamResponse")
 	proto.RegisterType((*ExistObjectRequest)(nil), "ExistObjectRequest")
 	proto.RegisterType((*ExistObjectResponse)(nil), "ExistObjectResponse")
 	proto.RegisterType((*ExistObjectStreamRequest)(nil), "ExistObjectStreamRequest")
@@ -589,104 +636,6 @@ func init() {
 	proto.RegisterType((*DeleteReferenceListRequest)(nil), "DeleteReferenceListRequest")
 	proto.RegisterType((*DeleteReferenceListResponse)(nil), "DeleteReferenceListResponse")
 	proto.RegisterEnum("ObjectStatus", ObjectStatus_name, ObjectStatus_value)
-}
-func (this *Namespace) Compare(that interface{}) int {
-	if that == nil {
-		if this == nil {
-			return 0
-		}
-		return 1
-	}
-
-	that1, ok := that.(*Namespace)
-	if !ok {
-		that2, ok := that.(Namespace)
-		if ok {
-			that1 = &that2
-		} else {
-			return 1
-		}
-	}
-	if that1 == nil {
-		if this == nil {
-			return 0
-		}
-		return 1
-	} else if this == nil {
-		return -1
-	}
-	if this.Label != that1.Label {
-		if this.Label < that1.Label {
-			return -1
-		}
-		return 1
-	}
-	if this.ReadRequestPerHour != that1.ReadRequestPerHour {
-		if this.ReadRequestPerHour < that1.ReadRequestPerHour {
-			return -1
-		}
-		return 1
-	}
-	if this.WriteRequestPerHour != that1.WriteRequestPerHour {
-		if this.WriteRequestPerHour < that1.WriteRequestPerHour {
-			return -1
-		}
-		return 1
-	}
-	if this.NrObjects != that1.NrObjects {
-		if this.NrObjects < that1.NrObjects {
-			return -1
-		}
-		return 1
-	}
-	return 0
-}
-func (this *Object) Compare(that interface{}) int {
-	if that == nil {
-		if this == nil {
-			return 0
-		}
-		return 1
-	}
-
-	that1, ok := that.(*Object)
-	if !ok {
-		that2, ok := that.(Object)
-		if ok {
-			that1 = &that2
-		} else {
-			return 1
-		}
-	}
-	if that1 == nil {
-		if this == nil {
-			return 0
-		}
-		return 1
-	} else if this == nil {
-		return -1
-	}
-	if c := bytes.Compare(this.Key, that1.Key); c != 0 {
-		return c
-	}
-	if c := bytes.Compare(this.Value, that1.Value); c != 0 {
-		return c
-	}
-	if len(this.ReferenceList) != len(that1.ReferenceList) {
-		if len(this.ReferenceList) < len(that1.ReferenceList) {
-			return -1
-		}
-		return 1
-	}
-	for i := range this.ReferenceList {
-		if this.ReferenceList[i] != that1.ReferenceList[i] {
-			if this.ReferenceList[i] < that1.ReferenceList[i] {
-				return -1
-			}
-			return 1
-		}
-	}
-	return 0
 }
 func (this *GetNamespaceRequest) Compare(that interface{}) int {
 	if that == nil {
@@ -740,8 +689,29 @@ func (this *GetNamespaceResponse) Compare(that interface{}) int {
 	} else if this == nil {
 		return -1
 	}
-	if c := this.Namespace.Compare(that1.Namespace); c != 0 {
-		return c
+	if this.Label != that1.Label {
+		if this.Label < that1.Label {
+			return -1
+		}
+		return 1
+	}
+	if this.ReadRequestPerHour != that1.ReadRequestPerHour {
+		if this.ReadRequestPerHour < that1.ReadRequestPerHour {
+			return -1
+		}
+		return 1
+	}
+	if this.WriteRequestPerHour != that1.WriteRequestPerHour {
+		if this.WriteRequestPerHour < that1.WriteRequestPerHour {
+			return -1
+		}
+		return 1
+	}
+	if this.NrObjects != that1.NrObjects {
+		if this.NrObjects < that1.NrObjects {
+			return -1
+		}
+		return 1
 	}
 	return 0
 }
@@ -770,8 +740,25 @@ func (this *SetObjectRequest) Compare(that interface{}) int {
 	} else if this == nil {
 		return -1
 	}
-	if c := this.Object.Compare(that1.Object); c != 0 {
+	if c := bytes.Compare(this.Key, that1.Key); c != 0 {
 		return c
+	}
+	if c := bytes.Compare(this.Value, that1.Value); c != 0 {
+		return c
+	}
+	if len(this.ReferenceList) != len(that1.ReferenceList) {
+		if len(this.ReferenceList) < len(that1.ReferenceList) {
+			return -1
+		}
+		return 1
+	}
+	for i := range this.ReferenceList {
+		if this.ReferenceList[i] != that1.ReferenceList[i] {
+			if this.ReferenceList[i] < that1.ReferenceList[i] {
+				return -1
+			}
+			return 1
+		}
 	}
 	return 0
 }
@@ -857,8 +844,31 @@ func (this *GetObjectResponse) Compare(that interface{}) int {
 	} else if this == nil {
 		return -1
 	}
-	if c := this.Object.Compare(that1.Object); c != 0 {
+	if c := bytes.Compare(this.Key, that1.Key); c != 0 {
 		return c
+	}
+	if c := bytes.Compare(this.Value, that1.Value); c != 0 {
+		return c
+	}
+	if this.Status != that1.Status {
+		if this.Status < that1.Status {
+			return -1
+		}
+		return 1
+	}
+	if len(this.ReferenceList) != len(that1.ReferenceList) {
+		if len(this.ReferenceList) < len(that1.ReferenceList) {
+			return -1
+		}
+		return 1
+	}
+	for i := range this.ReferenceList {
+		if this.ReferenceList[i] != that1.ReferenceList[i] {
+			if this.ReferenceList[i] < that1.ReferenceList[i] {
+				return -1
+			}
+			return 1
+		}
 	}
 	return 0
 }
@@ -896,6 +906,59 @@ func (this *GetObjectStreamRequest) Compare(that interface{}) int {
 	for i := range this.Keys {
 		if c := bytes.Compare(this.Keys[i], that1.Keys[i]); c != 0 {
 			return c
+		}
+	}
+	return 0
+}
+func (this *GetObjectStreamResponse) Compare(that interface{}) int {
+	if that == nil {
+		if this == nil {
+			return 0
+		}
+		return 1
+	}
+
+	that1, ok := that.(*GetObjectStreamResponse)
+	if !ok {
+		that2, ok := that.(GetObjectStreamResponse)
+		if ok {
+			that1 = &that2
+		} else {
+			return 1
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return 0
+		}
+		return 1
+	} else if this == nil {
+		return -1
+	}
+	if c := bytes.Compare(this.Key, that1.Key); c != 0 {
+		return c
+	}
+	if c := bytes.Compare(this.Value, that1.Value); c != 0 {
+		return c
+	}
+	if this.Status != that1.Status {
+		if this.Status < that1.Status {
+			return -1
+		}
+		return 1
+	}
+	if len(this.ReferenceList) != len(that1.ReferenceList) {
+		if len(this.ReferenceList) < len(that1.ReferenceList) {
+			return -1
+		}
+		return 1
+	}
+	for i := range this.ReferenceList {
+		if this.ReferenceList[i] != that1.ReferenceList[i] {
+			if this.ReferenceList[i] < that1.ReferenceList[i] {
+				return -1
+			}
+			return 1
 		}
 	}
 	return 0
@@ -1436,6 +1499,12 @@ func (this *GetReferenceListResponse) Compare(that interface{}) int {
 			return 1
 		}
 	}
+	if this.Status != that1.Status {
+		if this.Status < that1.Status {
+			return -1
+		}
+		return 1
+	}
 	return 0
 }
 func (this *AppendReferenceListRequest) Compare(that interface{}) int {
@@ -1506,6 +1575,12 @@ func (this *AppendReferenceListResponse) Compare(that interface{}) int {
 		return 1
 	} else if this == nil {
 		return -1
+	}
+	if this.Status != that1.Status {
+		if this.Status < that1.Status {
+			return -1
+		}
+		return 1
 	}
 	return 0
 }
@@ -1587,74 +1662,6 @@ func (x ObjectStatus) String() string {
 	}
 	return strconv.Itoa(int(x))
 }
-func (this *Namespace) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Namespace)
-	if !ok {
-		that2, ok := that.(Namespace)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Label != that1.Label {
-		return false
-	}
-	if this.ReadRequestPerHour != that1.ReadRequestPerHour {
-		return false
-	}
-	if this.WriteRequestPerHour != that1.WriteRequestPerHour {
-		return false
-	}
-	if this.NrObjects != that1.NrObjects {
-		return false
-	}
-	return true
-}
-func (this *Object) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Object)
-	if !ok {
-		that2, ok := that.(Object)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if !bytes.Equal(this.Key, that1.Key) {
-		return false
-	}
-	if !bytes.Equal(this.Value, that1.Value) {
-		return false
-	}
-	if len(this.ReferenceList) != len(that1.ReferenceList) {
-		return false
-	}
-	for i := range this.ReferenceList {
-		if this.ReferenceList[i] != that1.ReferenceList[i] {
-			return false
-		}
-	}
-	return true
-}
 func (this *GetNamespaceRequest) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
@@ -1695,7 +1702,16 @@ func (this *GetNamespaceResponse) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if !this.Namespace.Equal(that1.Namespace) {
+	if this.Label != that1.Label {
+		return false
+	}
+	if this.ReadRequestPerHour != that1.ReadRequestPerHour {
+		return false
+	}
+	if this.WriteRequestPerHour != that1.WriteRequestPerHour {
+		return false
+	}
+	if this.NrObjects != that1.NrObjects {
 		return false
 	}
 	return true
@@ -1719,8 +1735,19 @@ func (this *SetObjectRequest) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if !this.Object.Equal(that1.Object) {
+	if !bytes.Equal(this.Key, that1.Key) {
 		return false
+	}
+	if !bytes.Equal(this.Value, that1.Value) {
+		return false
+	}
+	if len(this.ReferenceList) != len(that1.ReferenceList) {
+		return false
+	}
+	for i := range this.ReferenceList {
+		if this.ReferenceList[i] != that1.ReferenceList[i] {
+			return false
+		}
 	}
 	return true
 }
@@ -1788,8 +1815,22 @@ func (this *GetObjectResponse) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if !this.Object.Equal(that1.Object) {
+	if !bytes.Equal(this.Key, that1.Key) {
 		return false
+	}
+	if !bytes.Equal(this.Value, that1.Value) {
+		return false
+	}
+	if this.Status != that1.Status {
+		return false
+	}
+	if len(this.ReferenceList) != len(that1.ReferenceList) {
+		return false
+	}
+	for i := range this.ReferenceList {
+		if this.ReferenceList[i] != that1.ReferenceList[i] {
+			return false
+		}
 	}
 	return true
 }
@@ -1817,6 +1858,44 @@ func (this *GetObjectStreamRequest) Equal(that interface{}) bool {
 	}
 	for i := range this.Keys {
 		if !bytes.Equal(this.Keys[i], that1.Keys[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *GetObjectStreamResponse) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*GetObjectStreamResponse)
+	if !ok {
+		that2, ok := that.(GetObjectStreamResponse)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if !bytes.Equal(this.Key, that1.Key) {
+		return false
+	}
+	if !bytes.Equal(this.Value, that1.Value) {
+		return false
+	}
+	if this.Status != that1.Status {
+		return false
+	}
+	if len(this.ReferenceList) != len(that1.ReferenceList) {
+		return false
+	}
+	for i := range this.ReferenceList {
+		if this.ReferenceList[i] != that1.ReferenceList[i] {
 			return false
 		}
 	}
@@ -2229,6 +2308,9 @@ func (this *GetReferenceListResponse) Equal(that interface{}) bool {
 			return false
 		}
 	}
+	if this.Status != that1.Status {
+		return false
+	}
 	return true
 }
 func (this *AppendReferenceListRequest) Equal(that interface{}) bool {
@@ -2280,6 +2362,9 @@ func (this *AppendReferenceListResponse) Equal(that interface{}) bool {
 	if that1 == nil {
 		return this == nil
 	} else if this == nil {
+		return false
+	}
+	if this.Status != that1.Status {
 		return false
 	}
 	return true
@@ -2337,31 +2422,6 @@ func (this *DeleteReferenceListResponse) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *Namespace) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 8)
-	s = append(s, "&zstor.Namespace{")
-	s = append(s, "Label: "+fmt.Sprintf("%#v", this.Label)+",\n")
-	s = append(s, "ReadRequestPerHour: "+fmt.Sprintf("%#v", this.ReadRequestPerHour)+",\n")
-	s = append(s, "WriteRequestPerHour: "+fmt.Sprintf("%#v", this.WriteRequestPerHour)+",\n")
-	s = append(s, "NrObjects: "+fmt.Sprintf("%#v", this.NrObjects)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *Object) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 7)
-	s = append(s, "&zstor.Object{")
-	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
-	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
-	s = append(s, "ReferenceList: "+fmt.Sprintf("%#v", this.ReferenceList)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
 func (this *GetNamespaceRequest) GoString() string {
 	if this == nil {
 		return "nil"
@@ -2375,11 +2435,12 @@ func (this *GetNamespaceResponse) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 8)
 	s = append(s, "&zstor.GetNamespaceResponse{")
-	if this.Namespace != nil {
-		s = append(s, "Namespace: "+fmt.Sprintf("%#v", this.Namespace)+",\n")
-	}
+	s = append(s, "Label: "+fmt.Sprintf("%#v", this.Label)+",\n")
+	s = append(s, "ReadRequestPerHour: "+fmt.Sprintf("%#v", this.ReadRequestPerHour)+",\n")
+	s = append(s, "WriteRequestPerHour: "+fmt.Sprintf("%#v", this.WriteRequestPerHour)+",\n")
+	s = append(s, "NrObjects: "+fmt.Sprintf("%#v", this.NrObjects)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -2387,11 +2448,11 @@ func (this *SetObjectRequest) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 7)
 	s = append(s, "&zstor.SetObjectRequest{")
-	if this.Object != nil {
-		s = append(s, "Object: "+fmt.Sprintf("%#v", this.Object)+",\n")
-	}
+	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
+	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
+	s = append(s, "ReferenceList: "+fmt.Sprintf("%#v", this.ReferenceList)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -2418,11 +2479,12 @@ func (this *GetObjectResponse) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 8)
 	s = append(s, "&zstor.GetObjectResponse{")
-	if this.Object != nil {
-		s = append(s, "Object: "+fmt.Sprintf("%#v", this.Object)+",\n")
-	}
+	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
+	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
+	s = append(s, "Status: "+fmt.Sprintf("%#v", this.Status)+",\n")
+	s = append(s, "ReferenceList: "+fmt.Sprintf("%#v", this.ReferenceList)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -2433,6 +2495,19 @@ func (this *GetObjectStreamRequest) GoString() string {
 	s := make([]string, 0, 5)
 	s = append(s, "&zstor.GetObjectStreamRequest{")
 	s = append(s, "Keys: "+fmt.Sprintf("%#v", this.Keys)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *GetObjectStreamResponse) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 8)
+	s = append(s, "&zstor.GetObjectStreamResponse{")
+	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
+	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
+	s = append(s, "Status: "+fmt.Sprintf("%#v", this.Status)+",\n")
+	s = append(s, "ReferenceList: "+fmt.Sprintf("%#v", this.ReferenceList)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -2590,9 +2665,10 @@ func (this *GetReferenceListResponse) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 6)
 	s = append(s, "&zstor.GetReferenceListResponse{")
 	s = append(s, "ReferenceList: "+fmt.Sprintf("%#v", this.ReferenceList)+",\n")
+	s = append(s, "Status: "+fmt.Sprintf("%#v", this.Status)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -2611,8 +2687,9 @@ func (this *AppendReferenceListResponse) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 4)
+	s := make([]string, 0, 5)
 	s = append(s, "&zstor.AppendReferenceListResponse{")
+	s = append(s, "Status: "+fmt.Sprintf("%#v", this.Status)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -2822,7 +2899,7 @@ func (c *objectManagerClient) GetObjectStream(ctx context.Context, in *GetObject
 }
 
 type ObjectManager_GetObjectStreamClient interface {
-	Recv() (*Object, error)
+	Recv() (*GetObjectStreamResponse, error)
 	grpc.ClientStream
 }
 
@@ -2830,8 +2907,8 @@ type objectManagerGetObjectStreamClient struct {
 	grpc.ClientStream
 }
 
-func (x *objectManagerGetObjectStreamClient) Recv() (*Object, error) {
-	m := new(Object)
+func (x *objectManagerGetObjectStreamClient) Recv() (*GetObjectStreamResponse, error) {
+	m := new(GetObjectStreamResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -3099,7 +3176,7 @@ func _ObjectManager_GetObjectStream_Handler(srv interface{}, stream grpc.ServerS
 }
 
 type ObjectManager_GetObjectStreamServer interface {
-	Send(*Object) error
+	Send(*GetObjectStreamResponse) error
 	grpc.ServerStream
 }
 
@@ -3107,7 +3184,7 @@ type objectManagerGetObjectStreamServer struct {
 	grpc.ServerStream
 }
 
-func (x *objectManagerGetObjectStreamServer) Send(m *Object) error {
+func (x *objectManagerGetObjectStreamServer) Send(m *GetObjectStreamResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -3366,90 +3443,6 @@ var _ObjectManager_serviceDesc = grpc.ServiceDesc{
 	Metadata: "schema/zstor.proto",
 }
 
-func (m *Namespace) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Namespace) MarshalTo(dAtA []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Label) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintZstor(dAtA, i, uint64(len(m.Label)))
-		i += copy(dAtA[i:], m.Label)
-	}
-	if m.ReadRequestPerHour != 0 {
-		dAtA[i] = 0x10
-		i++
-		i = encodeVarintZstor(dAtA, i, uint64(m.ReadRequestPerHour))
-	}
-	if m.WriteRequestPerHour != 0 {
-		dAtA[i] = 0x18
-		i++
-		i = encodeVarintZstor(dAtA, i, uint64(m.WriteRequestPerHour))
-	}
-	if m.NrObjects != 0 {
-		dAtA[i] = 0x20
-		i++
-		i = encodeVarintZstor(dAtA, i, uint64(m.NrObjects))
-	}
-	return i, nil
-}
-
-func (m *Object) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Object) MarshalTo(dAtA []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Key) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintZstor(dAtA, i, uint64(len(m.Key)))
-		i += copy(dAtA[i:], m.Key)
-	}
-	if len(m.Value) > 0 {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintZstor(dAtA, i, uint64(len(m.Value)))
-		i += copy(dAtA[i:], m.Value)
-	}
-	if len(m.ReferenceList) > 0 {
-		for _, s := range m.ReferenceList {
-			dAtA[i] = 0x1a
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			dAtA[i] = uint8(l)
-			i++
-			i += copy(dAtA[i:], s)
-		}
-	}
-	return i, nil
-}
-
 func (m *GetNamespaceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3483,15 +3476,26 @@ func (m *GetNamespaceResponse) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Namespace != nil {
+	if len(m.Label) > 0 {
 		dAtA[i] = 0xa
 		i++
-		i = encodeVarintZstor(dAtA, i, uint64(m.Namespace.Size()))
-		n1, err := m.Namespace.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n1
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Label)))
+		i += copy(dAtA[i:], m.Label)
+	}
+	if m.ReadRequestPerHour != 0 {
+		dAtA[i] = 0x10
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.ReadRequestPerHour))
+	}
+	if m.WriteRequestPerHour != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.WriteRequestPerHour))
+	}
+	if m.NrObjects != 0 {
+		dAtA[i] = 0x20
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.NrObjects))
 	}
 	return i, nil
 }
@@ -3511,15 +3515,32 @@ func (m *SetObjectRequest) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Object != nil {
+	if len(m.Key) > 0 {
 		dAtA[i] = 0xa
 		i++
-		i = encodeVarintZstor(dAtA, i, uint64(m.Object.Size()))
-		n2, err := m.Object.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Key)))
+		i += copy(dAtA[i:], m.Key)
+	}
+	if len(m.Value) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Value)))
+		i += copy(dAtA[i:], m.Value)
+	}
+	if len(m.ReferenceList) > 0 {
+		for _, s := range m.ReferenceList {
+			dAtA[i] = 0x1a
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
-		i += n2
 	}
 	return i, nil
 }
@@ -3581,15 +3602,37 @@ func (m *GetObjectResponse) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Object != nil {
+	if len(m.Key) > 0 {
 		dAtA[i] = 0xa
 		i++
-		i = encodeVarintZstor(dAtA, i, uint64(m.Object.Size()))
-		n3, err := m.Object.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Key)))
+		i += copy(dAtA[i:], m.Key)
+	}
+	if len(m.Value) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Value)))
+		i += copy(dAtA[i:], m.Value)
+	}
+	if m.Status != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.Status))
+	}
+	if len(m.ReferenceList) > 0 {
+		for _, s := range m.ReferenceList {
+			dAtA[i] = 0x22
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
-		i += n3
 	}
 	return i, nil
 }
@@ -3615,6 +3658,56 @@ func (m *GetObjectStreamRequest) MarshalTo(dAtA []byte) (int, error) {
 			i++
 			i = encodeVarintZstor(dAtA, i, uint64(len(b)))
 			i += copy(dAtA[i:], b)
+		}
+	}
+	return i, nil
+}
+
+func (m *GetObjectStreamResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetObjectStreamResponse) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Key) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Key)))
+		i += copy(dAtA[i:], m.Key)
+	}
+	if len(m.Value) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(len(m.Value)))
+		i += copy(dAtA[i:], m.Value)
+	}
+	if m.Status != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.Status))
+	}
+	if len(m.ReferenceList) > 0 {
+		for _, s := range m.ReferenceList {
+			dAtA[i] = 0x22
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
 	}
 	return i, nil
@@ -4031,6 +4124,11 @@ func (m *GetReferenceListResponse) MarshalTo(dAtA []byte) (int, error) {
 			i += copy(dAtA[i:], s)
 		}
 	}
+	if m.Status != 0 {
+		dAtA[i] = 0x10
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.Status))
+	}
 	return i, nil
 }
 
@@ -4088,6 +4186,11 @@ func (m *AppendReferenceListResponse) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.Status != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintZstor(dAtA, i, uint64(m.Status))
+	}
 	return i, nil
 }
 
@@ -4157,8 +4260,15 @@ func encodeVarintZstor(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return offset + 1
 }
-func NewPopulatedNamespace(r randyZstor, easy bool) *Namespace {
-	this := &Namespace{}
+func NewPopulatedGetNamespaceRequest(r randyZstor, easy bool) *GetNamespaceRequest {
+	this := &GetNamespaceRequest{}
+	if !easy && r.Intn(10) != 0 {
+	}
+	return this
+}
+
+func NewPopulatedGetNamespaceResponse(r randyZstor, easy bool) *GetNamespaceResponse {
+	this := &GetNamespaceResponse{}
 	this.Label = string(randStringZstor(r))
 	this.ReadRequestPerHour = int64(r.Int63())
 	if r.Intn(2) == 0 {
@@ -4177,8 +4287,8 @@ func NewPopulatedNamespace(r randyZstor, easy bool) *Namespace {
 	return this
 }
 
-func NewPopulatedObject(r randyZstor, easy bool) *Object {
-	this := &Object{}
+func NewPopulatedSetObjectRequest(r randyZstor, easy bool) *SetObjectRequest {
+	this := &SetObjectRequest{}
 	v1 := r.Intn(100)
 	this.Key = make([]byte, v1)
 	for i := 0; i < v1; i++ {
@@ -4193,33 +4303,6 @@ func NewPopulatedObject(r randyZstor, easy bool) *Object {
 	this.ReferenceList = make([]string, v3)
 	for i := 0; i < v3; i++ {
 		this.ReferenceList[i] = string(randStringZstor(r))
-	}
-	if !easy && r.Intn(10) != 0 {
-	}
-	return this
-}
-
-func NewPopulatedGetNamespaceRequest(r randyZstor, easy bool) *GetNamespaceRequest {
-	this := &GetNamespaceRequest{}
-	if !easy && r.Intn(10) != 0 {
-	}
-	return this
-}
-
-func NewPopulatedGetNamespaceResponse(r randyZstor, easy bool) *GetNamespaceResponse {
-	this := &GetNamespaceResponse{}
-	if r.Intn(10) != 0 {
-		this.Namespace = NewPopulatedNamespace(r, easy)
-	}
-	if !easy && r.Intn(10) != 0 {
-	}
-	return this
-}
-
-func NewPopulatedSetObjectRequest(r randyZstor, easy bool) *SetObjectRequest {
-	this := &SetObjectRequest{}
-	if r.Intn(10) != 0 {
-		this.Object = NewPopulatedObject(r, easy)
 	}
 	if !easy && r.Intn(10) != 0 {
 	}
@@ -4247,8 +4330,21 @@ func NewPopulatedGetObjectRequest(r randyZstor, easy bool) *GetObjectRequest {
 
 func NewPopulatedGetObjectResponse(r randyZstor, easy bool) *GetObjectResponse {
 	this := &GetObjectResponse{}
-	if r.Intn(10) != 0 {
-		this.Object = NewPopulatedObject(r, easy)
+	v5 := r.Intn(100)
+	this.Key = make([]byte, v5)
+	for i := 0; i < v5; i++ {
+		this.Key[i] = byte(r.Intn(256))
+	}
+	v6 := r.Intn(100)
+	this.Value = make([]byte, v6)
+	for i := 0; i < v6; i++ {
+		this.Value[i] = byte(r.Intn(256))
+	}
+	this.Status = ObjectStatus([]int32{0, 1, 2}[r.Intn(3)])
+	v7 := r.Intn(10)
+	this.ReferenceList = make([]string, v7)
+	for i := 0; i < v7; i++ {
+		this.ReferenceList[i] = string(randStringZstor(r))
 	}
 	if !easy && r.Intn(10) != 0 {
 	}
@@ -4257,12 +4353,12 @@ func NewPopulatedGetObjectResponse(r randyZstor, easy bool) *GetObjectResponse {
 
 func NewPopulatedGetObjectStreamRequest(r randyZstor, easy bool) *GetObjectStreamRequest {
 	this := &GetObjectStreamRequest{}
-	v5 := r.Intn(10)
-	this.Keys = make([][]byte, v5)
-	for i := 0; i < v5; i++ {
-		v6 := r.Intn(100)
-		this.Keys[i] = make([]byte, v6)
-		for j := 0; j < v6; j++ {
+	v8 := r.Intn(10)
+	this.Keys = make([][]byte, v8)
+	for i := 0; i < v8; i++ {
+		v9 := r.Intn(100)
+		this.Keys[i] = make([]byte, v9)
+		for j := 0; j < v9; j++ {
 			this.Keys[i][j] = byte(r.Intn(256))
 		}
 	}
@@ -4271,11 +4367,34 @@ func NewPopulatedGetObjectStreamRequest(r randyZstor, easy bool) *GetObjectStrea
 	return this
 }
 
+func NewPopulatedGetObjectStreamResponse(r randyZstor, easy bool) *GetObjectStreamResponse {
+	this := &GetObjectStreamResponse{}
+	v10 := r.Intn(100)
+	this.Key = make([]byte, v10)
+	for i := 0; i < v10; i++ {
+		this.Key[i] = byte(r.Intn(256))
+	}
+	v11 := r.Intn(100)
+	this.Value = make([]byte, v11)
+	for i := 0; i < v11; i++ {
+		this.Value[i] = byte(r.Intn(256))
+	}
+	this.Status = ObjectStatus([]int32{0, 1, 2}[r.Intn(3)])
+	v12 := r.Intn(10)
+	this.ReferenceList = make([]string, v12)
+	for i := 0; i < v12; i++ {
+		this.ReferenceList[i] = string(randStringZstor(r))
+	}
+	if !easy && r.Intn(10) != 0 {
+	}
+	return this
+}
+
 func NewPopulatedExistObjectRequest(r randyZstor, easy bool) *ExistObjectRequest {
 	this := &ExistObjectRequest{}
-	v7 := r.Intn(100)
-	this.Key = make([]byte, v7)
-	for i := 0; i < v7; i++ {
+	v13 := r.Intn(100)
+	this.Key = make([]byte, v13)
+	for i := 0; i < v13; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4293,12 +4412,12 @@ func NewPopulatedExistObjectResponse(r randyZstor, easy bool) *ExistObjectRespon
 
 func NewPopulatedExistObjectStreamRequest(r randyZstor, easy bool) *ExistObjectStreamRequest {
 	this := &ExistObjectStreamRequest{}
-	v8 := r.Intn(10)
-	this.Keys = make([][]byte, v8)
-	for i := 0; i < v8; i++ {
-		v9 := r.Intn(100)
-		this.Keys[i] = make([]byte, v9)
-		for j := 0; j < v9; j++ {
+	v14 := r.Intn(10)
+	this.Keys = make([][]byte, v14)
+	for i := 0; i < v14; i++ {
+		v15 := r.Intn(100)
+		this.Keys[i] = make([]byte, v15)
+		for j := 0; j < v15; j++ {
 			this.Keys[i][j] = byte(r.Intn(256))
 		}
 	}
@@ -4309,9 +4428,9 @@ func NewPopulatedExistObjectStreamRequest(r randyZstor, easy bool) *ExistObjectS
 
 func NewPopulatedExistObjectStreamResponse(r randyZstor, easy bool) *ExistObjectStreamResponse {
 	this := &ExistObjectStreamResponse{}
-	v10 := r.Intn(100)
-	this.Key = make([]byte, v10)
-	for i := 0; i < v10; i++ {
+	v16 := r.Intn(100)
+	this.Key = make([]byte, v16)
+	for i := 0; i < v16; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
 	this.Exists = bool(bool(r.Intn(2) == 0))
@@ -4322,12 +4441,12 @@ func NewPopulatedExistObjectStreamResponse(r randyZstor, easy bool) *ExistObject
 
 func NewPopulatedDeleteObjectsRequest(r randyZstor, easy bool) *DeleteObjectsRequest {
 	this := &DeleteObjectsRequest{}
-	v11 := r.Intn(10)
-	this.Keys = make([][]byte, v11)
-	for i := 0; i < v11; i++ {
-		v12 := r.Intn(100)
-		this.Keys[i] = make([]byte, v12)
-		for j := 0; j < v12; j++ {
+	v17 := r.Intn(10)
+	this.Keys = make([][]byte, v17)
+	for i := 0; i < v17; i++ {
+		v18 := r.Intn(100)
+		this.Keys[i] = make([]byte, v18)
+		for j := 0; j < v18; j++ {
 			this.Keys[i][j] = byte(r.Intn(256))
 		}
 	}
@@ -4345,9 +4464,9 @@ func NewPopulatedDeleteObjectsResponse(r randyZstor, easy bool) *DeleteObjectsRe
 
 func NewPopulatedGetObjectStatusRequest(r randyZstor, easy bool) *GetObjectStatusRequest {
 	this := &GetObjectStatusRequest{}
-	v13 := r.Intn(100)
-	this.Key = make([]byte, v13)
-	for i := 0; i < v13; i++ {
+	v19 := r.Intn(100)
+	this.Key = make([]byte, v19)
+	for i := 0; i < v19; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4365,12 +4484,12 @@ func NewPopulatedGetObjectStatusResponse(r randyZstor, easy bool) *GetObjectStat
 
 func NewPopulatedGetObjectStatusStreamRequest(r randyZstor, easy bool) *GetObjectStatusStreamRequest {
 	this := &GetObjectStatusStreamRequest{}
-	v14 := r.Intn(10)
-	this.Keys = make([][]byte, v14)
-	for i := 0; i < v14; i++ {
-		v15 := r.Intn(100)
-		this.Keys[i] = make([]byte, v15)
-		for j := 0; j < v15; j++ {
+	v20 := r.Intn(10)
+	this.Keys = make([][]byte, v20)
+	for i := 0; i < v20; i++ {
+		v21 := r.Intn(100)
+		this.Keys[i] = make([]byte, v21)
+		for j := 0; j < v21; j++ {
 			this.Keys[i][j] = byte(r.Intn(256))
 		}
 	}
@@ -4381,9 +4500,9 @@ func NewPopulatedGetObjectStatusStreamRequest(r randyZstor, easy bool) *GetObjec
 
 func NewPopulatedGetObjectStatusStreamResponse(r randyZstor, easy bool) *GetObjectStatusStreamResponse {
 	this := &GetObjectStatusStreamResponse{}
-	v16 := r.Intn(100)
-	this.Key = make([]byte, v16)
-	for i := 0; i < v16; i++ {
+	v22 := r.Intn(100)
+	this.Key = make([]byte, v22)
+	for i := 0; i < v22; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
 	this.Status = ObjectStatus([]int32{0, 1, 2}[r.Intn(3)])
@@ -4401,9 +4520,9 @@ func NewPopulatedListObjectKeyStreamRequest(r randyZstor, easy bool) *ListObject
 
 func NewPopulatedListObjectKeyStreamResponse(r randyZstor, easy bool) *ListObjectKeyStreamResponse {
 	this := &ListObjectKeyStreamResponse{}
-	v17 := r.Intn(100)
-	this.Key = make([]byte, v17)
-	for i := 0; i < v17; i++ {
+	v23 := r.Intn(100)
+	this.Key = make([]byte, v23)
+	for i := 0; i < v23; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4413,14 +4532,14 @@ func NewPopulatedListObjectKeyStreamResponse(r randyZstor, easy bool) *ListObjec
 
 func NewPopulatedSetReferenceListRequest(r randyZstor, easy bool) *SetReferenceListRequest {
 	this := &SetReferenceListRequest{}
-	v18 := r.Intn(100)
-	this.Key = make([]byte, v18)
-	for i := 0; i < v18; i++ {
+	v24 := r.Intn(100)
+	this.Key = make([]byte, v24)
+	for i := 0; i < v24; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
-	v19 := r.Intn(10)
-	this.ReferenceList = make([]string, v19)
-	for i := 0; i < v19; i++ {
+	v25 := r.Intn(10)
+	this.ReferenceList = make([]string, v25)
+	for i := 0; i < v25; i++ {
 		this.ReferenceList[i] = string(randStringZstor(r))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4437,9 +4556,9 @@ func NewPopulatedSetReferenceListResponse(r randyZstor, easy bool) *SetReference
 
 func NewPopulatedGetReferenceListRequest(r randyZstor, easy bool) *GetReferenceListRequest {
 	this := &GetReferenceListRequest{}
-	v20 := r.Intn(100)
-	this.Key = make([]byte, v20)
-	for i := 0; i < v20; i++ {
+	v26 := r.Intn(100)
+	this.Key = make([]byte, v26)
+	for i := 0; i < v26; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4449,11 +4568,12 @@ func NewPopulatedGetReferenceListRequest(r randyZstor, easy bool) *GetReferenceL
 
 func NewPopulatedGetReferenceListResponse(r randyZstor, easy bool) *GetReferenceListResponse {
 	this := &GetReferenceListResponse{}
-	v21 := r.Intn(10)
-	this.ReferenceList = make([]string, v21)
-	for i := 0; i < v21; i++ {
+	v27 := r.Intn(10)
+	this.ReferenceList = make([]string, v27)
+	for i := 0; i < v27; i++ {
 		this.ReferenceList[i] = string(randStringZstor(r))
 	}
+	this.Status = ObjectStatus([]int32{0, 1, 2}[r.Intn(3)])
 	if !easy && r.Intn(10) != 0 {
 	}
 	return this
@@ -4461,14 +4581,14 @@ func NewPopulatedGetReferenceListResponse(r randyZstor, easy bool) *GetReference
 
 func NewPopulatedAppendReferenceListRequest(r randyZstor, easy bool) *AppendReferenceListRequest {
 	this := &AppendReferenceListRequest{}
-	v22 := r.Intn(100)
-	this.Key = make([]byte, v22)
-	for i := 0; i < v22; i++ {
+	v28 := r.Intn(100)
+	this.Key = make([]byte, v28)
+	for i := 0; i < v28; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
-	v23 := r.Intn(10)
-	this.ReferenceList = make([]string, v23)
-	for i := 0; i < v23; i++ {
+	v29 := r.Intn(10)
+	this.ReferenceList = make([]string, v29)
+	for i := 0; i < v29; i++ {
 		this.ReferenceList[i] = string(randStringZstor(r))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4478,6 +4598,7 @@ func NewPopulatedAppendReferenceListRequest(r randyZstor, easy bool) *AppendRefe
 
 func NewPopulatedAppendReferenceListResponse(r randyZstor, easy bool) *AppendReferenceListResponse {
 	this := &AppendReferenceListResponse{}
+	this.Status = ObjectStatus([]int32{0, 1, 2}[r.Intn(3)])
 	if !easy && r.Intn(10) != 0 {
 	}
 	return this
@@ -4485,14 +4606,14 @@ func NewPopulatedAppendReferenceListResponse(r randyZstor, easy bool) *AppendRef
 
 func NewPopulatedDeleteReferenceListRequest(r randyZstor, easy bool) *DeleteReferenceListRequest {
 	this := &DeleteReferenceListRequest{}
-	v24 := r.Intn(100)
-	this.Key = make([]byte, v24)
-	for i := 0; i < v24; i++ {
+	v30 := r.Intn(100)
+	this.Key = make([]byte, v30)
+	for i := 0; i < v30; i++ {
 		this.Key[i] = byte(r.Intn(256))
 	}
-	v25 := r.Intn(10)
-	this.ReferenceList = make([]string, v25)
-	for i := 0; i < v25; i++ {
+	v31 := r.Intn(10)
+	this.ReferenceList = make([]string, v31)
+	for i := 0; i < v31; i++ {
 		this.ReferenceList[i] = string(randStringZstor(r))
 	}
 	if !easy && r.Intn(10) != 0 {
@@ -4526,9 +4647,9 @@ func randUTF8RuneZstor(r randyZstor) rune {
 	return rune(ru + 61)
 }
 func randStringZstor(r randyZstor) string {
-	v26 := r.Intn(100)
-	tmps := make([]rune, v26)
-	for i := 0; i < v26; i++ {
+	v32 := r.Intn(100)
+	tmps := make([]rune, v32)
+	for i := 0; i < v32; i++ {
 		tmps[i] = randUTF8RuneZstor(r)
 	}
 	return string(tmps)
@@ -4550,11 +4671,11 @@ func randFieldZstor(dAtA []byte, r randyZstor, fieldNumber int, wire int) []byte
 	switch wire {
 	case 0:
 		dAtA = encodeVarintPopulateZstor(dAtA, uint64(key))
-		v27 := r.Int63()
+		v33 := r.Int63()
 		if r.Intn(2) == 0 {
-			v27 *= -1
+			v33 *= -1
 		}
-		dAtA = encodeVarintPopulateZstor(dAtA, uint64(v27))
+		dAtA = encodeVarintPopulateZstor(dAtA, uint64(v33))
 	case 1:
 		dAtA = encodeVarintPopulateZstor(dAtA, uint64(key))
 		dAtA = append(dAtA, byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)))
@@ -4579,7 +4700,13 @@ func encodeVarintPopulateZstor(dAtA []byte, v uint64) []byte {
 	dAtA = append(dAtA, uint8(v))
 	return dAtA
 }
-func (m *Namespace) Size() (n int) {
+func (m *GetNamespaceRequest) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
+func (m *GetNamespaceResponse) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.Label)
@@ -4598,7 +4725,7 @@ func (m *Namespace) Size() (n int) {
 	return n
 }
 
-func (m *Object) Size() (n int) {
+func (m *SetObjectRequest) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.Key)
@@ -4614,32 +4741,6 @@ func (m *Object) Size() (n int) {
 			l = len(s)
 			n += 1 + l + sovZstor(uint64(l))
 		}
-	}
-	return n
-}
-
-func (m *GetNamespaceRequest) Size() (n int) {
-	var l int
-	_ = l
-	return n
-}
-
-func (m *GetNamespaceResponse) Size() (n int) {
-	var l int
-	_ = l
-	if m.Namespace != nil {
-		l = m.Namespace.Size()
-		n += 1 + l + sovZstor(uint64(l))
-	}
-	return n
-}
-
-func (m *SetObjectRequest) Size() (n int) {
-	var l int
-	_ = l
-	if m.Object != nil {
-		l = m.Object.Size()
-		n += 1 + l + sovZstor(uint64(l))
 	}
 	return n
 }
@@ -4663,9 +4764,22 @@ func (m *GetObjectRequest) Size() (n int) {
 func (m *GetObjectResponse) Size() (n int) {
 	var l int
 	_ = l
-	if m.Object != nil {
-		l = m.Object.Size()
+	l = len(m.Key)
+	if l > 0 {
 		n += 1 + l + sovZstor(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovZstor(uint64(l))
+	}
+	if m.Status != 0 {
+		n += 1 + sovZstor(uint64(m.Status))
+	}
+	if len(m.ReferenceList) > 0 {
+		for _, s := range m.ReferenceList {
+			l = len(s)
+			n += 1 + l + sovZstor(uint64(l))
+		}
 	}
 	return n
 }
@@ -4676,6 +4790,29 @@ func (m *GetObjectStreamRequest) Size() (n int) {
 	if len(m.Keys) > 0 {
 		for _, b := range m.Keys {
 			l = len(b)
+			n += 1 + l + sovZstor(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *GetObjectStreamResponse) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovZstor(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovZstor(uint64(l))
+	}
+	if m.Status != 0 {
+		n += 1 + sovZstor(uint64(m.Status))
+	}
+	if len(m.ReferenceList) > 0 {
+		for _, s := range m.ReferenceList {
+			l = len(s)
 			n += 1 + l + sovZstor(uint64(l))
 		}
 	}
@@ -4845,6 +4982,9 @@ func (m *GetReferenceListResponse) Size() (n int) {
 			n += 1 + l + sovZstor(uint64(l))
 		}
 	}
+	if m.Status != 0 {
+		n += 1 + sovZstor(uint64(m.Status))
+	}
 	return n
 }
 
@@ -4867,6 +5007,9 @@ func (m *AppendReferenceListRequest) Size() (n int) {
 func (m *AppendReferenceListResponse) Size() (n int) {
 	var l int
 	_ = l
+	if m.Status != 0 {
+		n += 1 + sovZstor(uint64(m.Status))
+	}
 	return n
 }
 
@@ -4905,31 +5048,6 @@ func sovZstor(x uint64) (n int) {
 func sozZstor(x uint64) (n int) {
 	return sovZstor(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (this *Namespace) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&Namespace{`,
-		`Label:` + fmt.Sprintf("%v", this.Label) + `,`,
-		`ReadRequestPerHour:` + fmt.Sprintf("%v", this.ReadRequestPerHour) + `,`,
-		`WriteRequestPerHour:` + fmt.Sprintf("%v", this.WriteRequestPerHour) + `,`,
-		`NrObjects:` + fmt.Sprintf("%v", this.NrObjects) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *Object) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&Object{`,
-		`Key:` + fmt.Sprintf("%v", this.Key) + `,`,
-		`Value:` + fmt.Sprintf("%v", this.Value) + `,`,
-		`ReferenceList:` + fmt.Sprintf("%v", this.ReferenceList) + `,`,
-		`}`,
-	}, "")
-	return s
-}
 func (this *GetNamespaceRequest) String() string {
 	if this == nil {
 		return "nil"
@@ -4944,7 +5062,10 @@ func (this *GetNamespaceResponse) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&GetNamespaceResponse{`,
-		`Namespace:` + strings.Replace(fmt.Sprintf("%v", this.Namespace), "Namespace", "Namespace", 1) + `,`,
+		`Label:` + fmt.Sprintf("%v", this.Label) + `,`,
+		`ReadRequestPerHour:` + fmt.Sprintf("%v", this.ReadRequestPerHour) + `,`,
+		`WriteRequestPerHour:` + fmt.Sprintf("%v", this.WriteRequestPerHour) + `,`,
+		`NrObjects:` + fmt.Sprintf("%v", this.NrObjects) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -4954,7 +5075,9 @@ func (this *SetObjectRequest) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&SetObjectRequest{`,
-		`Object:` + strings.Replace(fmt.Sprintf("%v", this.Object), "Object", "Object", 1) + `,`,
+		`Key:` + fmt.Sprintf("%v", this.Key) + `,`,
+		`Value:` + fmt.Sprintf("%v", this.Value) + `,`,
+		`ReferenceList:` + fmt.Sprintf("%v", this.ReferenceList) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -4983,7 +5106,10 @@ func (this *GetObjectResponse) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&GetObjectResponse{`,
-		`Object:` + strings.Replace(fmt.Sprintf("%v", this.Object), "Object", "Object", 1) + `,`,
+		`Key:` + fmt.Sprintf("%v", this.Key) + `,`,
+		`Value:` + fmt.Sprintf("%v", this.Value) + `,`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
+		`ReferenceList:` + fmt.Sprintf("%v", this.ReferenceList) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -4994,6 +5120,19 @@ func (this *GetObjectStreamRequest) String() string {
 	}
 	s := strings.Join([]string{`&GetObjectStreamRequest{`,
 		`Keys:` + fmt.Sprintf("%v", this.Keys) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *GetObjectStreamResponse) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&GetObjectStreamResponse{`,
+		`Key:` + fmt.Sprintf("%v", this.Key) + `,`,
+		`Value:` + fmt.Sprintf("%v", this.Value) + `,`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
+		`ReferenceList:` + fmt.Sprintf("%v", this.ReferenceList) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5154,6 +5293,7 @@ func (this *GetReferenceListResponse) String() string {
 	}
 	s := strings.Join([]string{`&GetReferenceListResponse{`,
 		`ReferenceList:` + fmt.Sprintf("%v", this.ReferenceList) + `,`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5174,6 +5314,7 @@ func (this *AppendReferenceListResponse) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&AppendReferenceListResponse{`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5206,7 +5347,7 @@ func valueToStringZstor(v interface{}) string {
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
 }
-func (m *Namespace) Unmarshal(dAtA []byte) error {
+func (m *GetNamespaceRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5229,10 +5370,60 @@ func (m *Namespace) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Namespace: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetNamespaceRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Namespace: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetNamespaceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipZstor(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthZstor
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetNamespaceResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowZstor
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetNamespaceResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetNamespaceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5342,7 +5533,7 @@ func (m *Namespace) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Object) Unmarshal(dAtA []byte) error {
+func (m *SetObjectRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5365,10 +5556,10 @@ func (m *Object) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Object: wiretype end group for non-group")
+			return fmt.Errorf("proto: SetObjectRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Object: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SetObjectRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5461,222 +5652,6 @@ func (m *Object) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ReferenceList = append(m.ReferenceList, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipZstor(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthZstor
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetNamespaceRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowZstor
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetNamespaceRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetNamespaceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipZstor(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthZstor
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetNamespaceResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowZstor
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetNamespaceResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetNamespaceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowZstor
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthZstor
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Namespace == nil {
-				m.Namespace = &Namespace{}
-			}
-			if err := m.Namespace.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipZstor(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthZstor
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *SetObjectRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowZstor
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SetObjectRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SetObjectRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Object", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowZstor
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthZstor
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Object == nil {
-				m.Object = &Object{}
-			}
-			if err := m.Object.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -5861,9 +5836,9 @@ func (m *GetObjectResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Object", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
 			}
-			var msglen int
+			var byteLen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowZstor
@@ -5873,24 +5848,101 @@ func (m *GetObjectResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
+				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			if byteLen < 0 {
 				return ErrInvalidLengthZstor
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + byteLen
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Object == nil {
-				m.Object = &Object{}
+			m.Key = append(m.Key[:0], dAtA[iNdEx:postIndex]...)
+			if m.Key == nil {
+				m.Key = []byte{}
 			}
-			if err := m.Object.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
 			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthZstor
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= (ObjectStatus(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReferenceList", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthZstor
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ReferenceList = append(m.ReferenceList, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -5970,6 +6022,166 @@ func (m *GetObjectStreamRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Keys = append(m.Keys, make([]byte, postIndex-iNdEx))
 			copy(m.Keys[len(m.Keys)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipZstor(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthZstor
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetObjectStreamResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowZstor
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetObjectStreamResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetObjectStreamResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthZstor
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = append(m.Key[:0], dAtA[iNdEx:postIndex]...)
+			if m.Key == nil {
+				m.Key = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthZstor
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= (ObjectStatus(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReferenceList", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthZstor
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ReferenceList = append(m.ReferenceList, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -7211,6 +7423,25 @@ func (m *GetReferenceListResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.ReferenceList = append(m.ReferenceList, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= (ObjectStatus(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipZstor(dAtA[iNdEx:])
@@ -7371,6 +7602,25 @@ func (m *AppendReferenceListResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: AppendReferenceListResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowZstor
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= (ObjectStatus(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipZstor(dAtA[iNdEx:])
@@ -7660,64 +7910,64 @@ var (
 func init() { proto.RegisterFile("schema/zstor.proto", fileDescriptorZstor) }
 
 var fileDescriptorZstor = []byte{
-	// 930 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x96, 0x4d, 0x6f, 0xe3, 0x44,
-	0x18, 0xc7, 0x3d, 0xc9, 0x92, 0x92, 0x67, 0xd3, 0x25, 0x7d, 0x92, 0x34, 0xee, 0x24, 0x35, 0xd1,
-	0xa8, 0xa0, 0xa8, 0xb0, 0xd3, 0x55, 0x76, 0x25, 0x24, 0x04, 0x52, 0x79, 0x59, 0x0c, 0xda, 0x37,
-	0xd6, 0xad, 0x10, 0xe2, 0xe6, 0xa4, 0xb3, 0xd9, 0xd0, 0x26, 0x0e, 0xb6, 0x03, 0x74, 0x4f, 0x9c,
-	0x7b, 0xe2, 0x0b, 0xf4, 0xc0, 0x6d, 0x3f, 0x02, 0xe2, 0xc4, 0x91, 0xe3, 0x1e, 0x39, 0x52, 0xef,
-	0x85, 0xe3, 0x1e, 0x39, 0xa2, 0x8c, 0x9d, 0xc4, 0x8e, 0xc7, 0xe9, 0x1e, 0x7a, 0xf3, 0x3c, 0xaf,
-	0xff, 0x79, 0x66, 0xe6, 0x27, 0x03, 0x7a, 0xbd, 0xa7, 0x62, 0x68, 0xef, 0x3d, 0xf3, 0x7c, 0xc7,
-	0xe5, 0x63, 0xd7, 0xf1, 0x1d, 0x7a, 0xb3, 0x3f, 0xf0, 0x9f, 0x4e, 0xba, 0xbc, 0xe7, 0x0c, 0xf7,
-	0xfa, 0x4e, 0xdf, 0xd9, 0x93, 0xe6, 0xee, 0xe4, 0x89, 0x5c, 0xc9, 0x85, 0xfc, 0x0a, 0xc3, 0xd9,
-	0x6f, 0x04, 0x8a, 0x0f, 0xed, 0xa1, 0xf0, 0xc6, 0x76, 0x4f, 0x60, 0x15, 0xde, 0x38, 0xb1, 0xbb,
-	0xe2, 0x44, 0x27, 0x2d, 0xd2, 0x2e, 0x5a, 0xe1, 0x02, 0x39, 0xa0, 0x2b, 0xec, 0x23, 0x4b, 0xfc,
-	0x30, 0x11, 0x9e, 0xff, 0xb5, 0x70, 0xbf, 0x74, 0x26, 0xae, 0x9e, 0x6b, 0x91, 0x76, 0xde, 0x52,
-	0x78, 0xf0, 0x16, 0x54, 0x7e, 0x72, 0x07, 0xbe, 0x58, 0x4a, 0xc8, 0xcb, 0x04, 0x95, 0x0b, 0x9b,
-	0x50, 0x1c, 0xb9, 0x8f, 0xba, 0xdf, 0x8b, 0x9e, 0xef, 0xe9, 0xd7, 0x64, 0xdc, 0xc2, 0xc0, 0xbe,
-	0x81, 0x42, 0xf8, 0x89, 0x65, 0xc8, 0x1f, 0x8b, 0x53, 0xa9, 0xae, 0x64, 0x4d, 0x3f, 0xa7, 0x8a,
-	0x7f, 0xb4, 0x4f, 0x26, 0x42, 0xca, 0x29, 0x59, 0xe1, 0x02, 0x77, 0x60, 0xdd, 0x15, 0x4f, 0x84,
-	0x2b, 0x46, 0x3d, 0x71, 0x7f, 0xe0, 0xf9, 0x7a, 0xbe, 0x95, 0x6f, 0x17, 0xad, 0xa4, 0x91, 0xd5,
-	0xa0, 0x62, 0x0a, 0x7f, 0xbe, 0xfb, 0x48, 0x13, 0xdb, 0x87, 0x6a, 0xd2, 0xec, 0x8d, 0x9d, 0x91,
-	0x27, 0xb0, 0x0d, 0xc5, 0xd1, 0xcc, 0x28, 0x25, 0x5c, 0xef, 0x00, 0x5f, 0x84, 0x2d, 0x9c, 0xec,
-	0x36, 0x94, 0x0f, 0x84, 0x1f, 0x6a, 0x8e, 0xaa, 0xe2, 0xdb, 0x50, 0x70, 0xa4, 0x21, 0x4a, 0x5d,
-	0xe3, 0x91, 0x3f, 0x32, 0xb3, 0x0a, 0x6c, 0xc4, 0x92, 0xc2, 0x9e, 0x6c, 0x07, 0xca, 0xe6, 0x72,
-	0xa5, 0xd4, 0x10, 0xd8, 0x1d, 0xd8, 0x30, 0x97, 0x53, 0x2f, 0x6f, 0xf8, 0x3e, 0x6c, 0xce, 0xb3,
-	0x0e, 0x7c, 0x57, 0xd8, 0xc3, 0x59, 0x07, 0x84, 0x6b, 0xc7, 0xe2, 0xd4, 0xd3, 0x49, 0x2b, 0xdf,
-	0x2e, 0x59, 0xf2, 0x9b, 0xbd, 0x0b, 0x78, 0xf7, 0xe7, 0x81, 0x77, 0xa9, 0x96, 0x9b, 0x50, 0x49,
-	0xc4, 0x45, 0x6a, 0x36, 0xa1, 0x20, 0xa6, 0x66, 0x4f, 0xc6, 0xbe, 0x69, 0x45, 0x2b, 0xc6, 0x41,
-	0x8f, 0x85, 0x5f, 0x2e, 0xe3, 0x2e, 0x6c, 0x29, 0xe2, 0xa3, 0x26, 0xe9, 0xeb, 0xb1, 0x68, 0x9b,
-	0x4b, 0xb4, 0xdd, 0x85, 0xea, 0xe7, 0xe2, 0x44, 0xf8, 0x22, 0xba, 0x63, 0xab, 0x5a, 0xd6, 0xa1,
-	0xb6, 0x14, 0x1b, 0x1d, 0xce, 0x6e, 0x62, 0x80, 0xb6, 0x3f, 0xf1, 0xb2, 0xc7, 0xb2, 0x0f, 0xf5,
-	0x54, 0x6c, 0xa4, 0xfa, 0x1d, 0x28, 0x78, 0xd2, 0x22, 0xe3, 0x6f, 0x74, 0xd6, 0x79, 0x22, 0x2c,
-	0x72, 0xb2, 0x0e, 0x34, 0x97, 0x2a, 0x5c, 0x3e, 0xad, 0x6f, 0x61, 0x3b, 0x23, 0x27, 0x73, 0x62,
-	0x0b, 0x35, 0xb9, 0x55, 0x6a, 0x9a, 0x40, 0xef, 0xcf, 0x8f, 0xe1, 0x9e, 0x38, 0x4d, 0x68, 0x61,
-	0x7b, 0xd0, 0x50, 0x7a, 0xb3, 0xba, 0xb2, 0xc7, 0x50, 0x3f, 0x10, 0xbe, 0x15, 0x7f, 0x9e, 0x99,
-	0xb3, 0x4c, 0xbf, 0xee, 0x9c, 0xea, 0x75, 0x53, 0xd0, 0xd3, 0x25, 0xa3, 0x93, 0x7b, 0x4f, 0x9e,
-	0xc6, 0xeb, 0xb5, 0x63, 0xfb, 0xa0, 0x9b, 0x19, 0x85, 0xd2, 0x52, 0x88, 0x4a, 0xca, 0x21, 0xd0,
-	0x4f, 0xc6, 0x63, 0x31, 0x3a, 0xba, 0xd2, 0x0d, 0x6e, 0x43, 0x43, 0x59, 0x35, 0xda, 0xe3, 0x21,
-	0xd0, 0xf0, 0xda, 0x5e, 0x75, 0x53, 0x65, 0xd5, 0xb0, 0xe9, 0xee, 0x33, 0x28, 0xc5, 0xaf, 0x0b,
-	0x52, 0xc8, 0x39, 0xc7, 0x65, 0x8d, 0xe2, 0xd9, 0x79, 0xeb, 0x46, 0xdc, 0xf3, 0xe8, 0xde, 0x94,
-	0xa7, 0x3d, 0xc7, 0x75, 0x27, 0x63, 0x5f, 0x1c, 0x95, 0x09, 0xdd, 0x3a, 0x3b, 0x6f, 0xd5, 0xe2,
-	0x21, 0x9f, 0xcd, 0x9c, 0xb8, 0x03, 0x6b, 0xc3, 0x81, 0xe7, 0x0d, 0x46, 0xfd, 0x72, 0x8e, 0xd6,
-	0xcf, 0xce, 0x5b, 0x95, 0x78, 0xdc, 0x83, 0xd0, 0xd5, 0x79, 0x0c, 0xe5, 0x39, 0x8d, 0x1f, 0xd8,
-	0x23, 0xbb, 0x2f, 0x5c, 0xfc, 0x18, 0x4a, 0x71, 0x96, 0x63, 0x95, 0x2b, 0x88, 0x4f, 0x6b, 0x5c,
-	0x05, 0x7c, 0xa6, 0x75, 0xfe, 0x58, 0x83, 0xf5, 0xb0, 0xd5, 0xac, 0xe0, 0x1d, 0x28, 0xce, 0x29,
-	0x8d, 0x1b, 0x7c, 0x19, 0xf3, 0x14, 0x79, 0x1a, 0xe2, 0xda, 0x34, 0xcb, 0x8c, 0x65, 0x99, 0xe9,
-	0x2c, 0x53, 0x91, 0xf5, 0x01, 0xbc, 0xb5, 0x04, 0x68, 0xac, 0x73, 0x35, 0xb2, 0xe9, 0x8c, 0xee,
-	0x4c, 0xbb, 0x45, 0xf0, 0x43, 0xb8, 0x1e, 0x83, 0x24, 0x56, 0x78, 0x9a, 0xdc, 0xb4, 0xca, 0x15,
-	0x98, 0x66, 0x1a, 0x3e, 0x84, 0x8d, 0x14, 0x60, 0x71, 0x8b, 0x67, 0x41, 0x9a, 0x52, 0x9e, 0xc9,
-	0x63, 0xa9, 0x65, 0x1f, 0xd6, 0x13, 0xf4, 0xc4, 0x1a, 0x57, 0x91, 0x97, 0x6e, 0x72, 0x35, 0x64,
-	0x35, 0xfc, 0x22, 0x31, 0x06, 0x79, 0xad, 0x12, 0x63, 0x88, 0x81, 0x97, 0xea, 0x3c, 0x83, 0xb2,
-	0x4c, 0xc3, 0xef, 0xa0, 0xa6, 0x84, 0x21, 0x6e, 0xf3, 0x55, 0x60, 0xa5, 0x06, 0x5f, 0xc9, 0x50,
-	0xb9, 0xcb, 0x43, 0xa8, 0x28, 0x80, 0x87, 0x0d, 0x9e, 0x0d, 0x49, 0xda, 0xe4, 0x2b, 0x18, 0x29,
-	0xab, 0x7e, 0x25, 0xff, 0x23, 0x12, 0x2f, 0x0d, 0x75, 0x9e, 0x01, 0x4a, 0xba, 0xc5, 0x33, 0x79,
-	0xa7, 0x4d, 0x4b, 0x99, 0xe9, 0x52, 0x66, 0x66, 0x29, 0x33, 0xbb, 0x94, 0x05, 0x15, 0x05, 0x77,
-	0xb0, 0xc1, 0xb3, 0x19, 0x47, 0x9b, 0x7c, 0x15, 0xaa, 0x64, 0x4d, 0x05, 0x56, 0xb0, 0xc1, 0xb3,
-	0x11, 0x46, 0x9b, 0x7c, 0x05, 0x89, 0x98, 0xf6, 0xe9, 0x47, 0x2f, 0x2e, 0x0c, 0xed, 0xef, 0x0b,
-	0x43, 0x7b, 0x75, 0x61, 0x90, 0xff, 0x2e, 0x0c, 0xf2, 0x4b, 0x60, 0x90, 0xe7, 0x81, 0x41, 0x7e,
-	0x0f, 0x0c, 0xf2, 0x67, 0x60, 0x90, 0xbf, 0x02, 0x83, 0xbc, 0x08, 0x0c, 0xf2, 0x4f, 0x60, 0x90,
-	0x7f, 0x03, 0x43, 0x7b, 0x15, 0x18, 0xe4, 0xd7, 0x97, 0x86, 0xf6, 0xfc, 0xa5, 0x41, 0xba, 0x05,
-	0xf9, 0x7f, 0x7c, 0xfb, 0xff, 0x00, 0x00, 0x00, 0xff, 0xff, 0xc8, 0x1e, 0x51, 0xbf, 0x64, 0x0b,
-	0x00, 0x00,
+	// 931 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x57, 0xcf, 0x6f, 0xe3, 0x44,
+	0x14, 0xf6, 0x24, 0xa5, 0x4b, 0x1e, 0xe9, 0x92, 0x8e, 0x93, 0xc6, 0x9d, 0xa4, 0xa3, 0x68, 0x54,
+	0x50, 0x54, 0xd8, 0xe9, 0xaa, 0x70, 0x42, 0x20, 0x2d, 0xb0, 0x8b, 0x17, 0xed, 0x2f, 0xd6, 0xed,
+	0x01, 0x71, 0xc2, 0x49, 0x67, 0xb3, 0xa1, 0x4d, 0x1c, 0x6c, 0x07, 0xe8, 0x9e, 0x38, 0xa2, 0x1e,
+	0x10, 0xff, 0x40, 0xef, 0x7b, 0xe0, 0x0f, 0xe0, 0xc8, 0x11, 0x89, 0xcb, 0x1e, 0x39, 0x52, 0xef,
+	0x85, 0xe3, 0x1e, 0x39, 0xa2, 0x8c, 0xdd, 0xd6, 0x8e, 0x67, 0x9c, 0x22, 0xad, 0xb4, 0x37, 0xcf,
+	0xbc, 0x5f, 0x9f, 0xbf, 0xf7, 0xfc, 0xbd, 0x04, 0x70, 0xd0, 0x7f, 0x2c, 0x46, 0xee, 0xf6, 0x93,
+	0x20, 0xf4, 0x7c, 0x3e, 0xf1, 0xbd, 0xd0, 0x23, 0xd7, 0x06, 0xc3, 0xf0, 0xf1, 0xb4, 0xc7, 0xfb,
+	0xde, 0x68, 0x7b, 0xe0, 0x0d, 0xbc, 0x6d, 0x79, 0xdd, 0x9b, 0x3e, 0x92, 0x27, 0x79, 0x90, 0x4f,
+	0xb1, 0x3b, 0x6b, 0x80, 0x69, 0x8b, 0xf0, 0xbe, 0x3b, 0x12, 0xc1, 0xc4, 0xed, 0x0b, 0x47, 0x7c,
+	0x3b, 0x15, 0x41, 0xc8, 0x7e, 0x45, 0x50, 0xcf, 0xde, 0x07, 0x13, 0x6f, 0x1c, 0x08, 0x5c, 0x87,
+	0xd7, 0x0e, 0xdd, 0x9e, 0x38, 0xb4, 0x50, 0x07, 0x75, 0x2b, 0x4e, 0x7c, 0xc0, 0x1c, 0xb0, 0x2f,
+	0xdc, 0xfd, 0x24, 0xfa, 0x0b, 0xe1, 0xdf, 0xf6, 0xa6, 0xbe, 0x55, 0xea, 0xa0, 0x6e, 0xd9, 0x51,
+	0x58, 0xf0, 0x75, 0x30, 0xbf, 0xf7, 0x87, 0xa1, 0x98, 0x0b, 0x28, 0xcb, 0x00, 0x95, 0x09, 0xb7,
+	0xa1, 0x32, 0xf6, 0x1f, 0xf4, 0xbe, 0x11, 0xfd, 0x30, 0xb0, 0x96, 0xa4, 0xdf, 0xc5, 0x05, 0xfb,
+	0x1a, 0x6a, 0xbb, 0x22, 0x8c, 0x4f, 0x49, 0x20, 0xae, 0x41, 0xf9, 0x40, 0x1c, 0x49, 0x9c, 0x55,
+	0x67, 0xf6, 0x38, 0xc3, 0xfe, 0x9d, 0x7b, 0x38, 0x15, 0x12, 0x58, 0xd5, 0x89, 0x0f, 0x78, 0x13,
+	0x56, 0x7c, 0xf1, 0x48, 0xf8, 0x62, 0xdc, 0x17, 0x77, 0x87, 0x41, 0x68, 0x95, 0x3b, 0xe5, 0x6e,
+	0xc5, 0xc9, 0x5e, 0x32, 0x13, 0x56, 0x53, 0x15, 0x62, 0x32, 0xd8, 0x26, 0xd4, 0xec, 0x85, 0x65,
+	0xd9, 0x4f, 0x08, 0x56, 0xed, 0xf9, 0xd8, 0x4b, 0xc3, 0x7b, 0x0b, 0x96, 0x83, 0xd0, 0x0d, 0xa7,
+	0x81, 0x64, 0xe7, 0xea, 0xce, 0x0a, 0x8f, 0x13, 0xed, 0xca, 0x4b, 0x27, 0x31, 0xe6, 0xdf, 0x62,
+	0x49, 0xf5, 0x16, 0xef, 0xc2, 0xda, 0x39, 0x92, 0xdd, 0xd0, 0x17, 0xee, 0xe8, 0x0c, 0x36, 0x86,
+	0xa5, 0x03, 0x71, 0x14, 0x58, 0xa8, 0x53, 0xee, 0x56, 0x1d, 0xf9, 0xcc, 0x7e, 0x46, 0xd0, 0xcc,
+	0xb9, 0xbf, 0x4a, 0xf8, 0x6f, 0x03, 0xbe, 0xf5, 0xc3, 0x30, 0x58, 0xc8, 0xf8, 0x35, 0x30, 0x33,
+	0x7e, 0x09, 0xe6, 0x35, 0x58, 0x16, 0xb3, 0xeb, 0x40, 0xfa, 0xbe, 0xee, 0x24, 0x27, 0xc6, 0xc1,
+	0x4a, 0xb9, 0x2f, 0xe6, 0xe5, 0x16, 0xac, 0x2b, 0xfc, 0xb5, 0xc4, 0x5c, 0x94, 0x2d, 0x65, 0xca,
+	0x6e, 0x41, 0xfd, 0xa6, 0x38, 0x14, 0xa1, 0x48, 0xa6, 0xb8, 0xa8, 0x64, 0x13, 0x1a, 0x73, 0xbe,
+	0xc9, 0x08, 0x6e, 0x65, 0x3a, 0x2a, 0x39, 0xd5, 0xd2, 0x72, 0x23, 0xd3, 0xce, 0xd8, 0x37, 0x41,
+	0x7d, 0xd1, 0x26, 0x54, 0xd0, 0x26, 0xb6, 0x03, 0xed, 0xb9, 0x0c, 0x8b, 0xd9, 0xfa, 0x12, 0x36,
+	0x34, 0x31, 0x5a, 0xc6, 0x2e, 0xd0, 0x94, 0x8a, 0xd0, 0xb4, 0x81, 0xdc, 0x3d, 0x6f, 0xc3, 0x1d,
+	0x71, 0x94, 0xc1, 0xc2, 0xb6, 0xa1, 0xa5, 0xb4, 0xea, 0xaa, 0xb2, 0x87, 0xd0, 0xdc, 0x15, 0xa1,
+	0x93, 0x9e, 0x38, 0xbd, 0x96, 0xe4, 0x06, 0xb6, 0xa4, 0x1a, 0x58, 0x02, 0x56, 0x3e, 0x65, 0xd2,
+	0xb9, 0x77, 0x64, 0x37, 0x2e, 0x57, 0x8e, 0x0d, 0xc0, 0xb2, 0x35, 0x89, 0xf2, 0x50, 0x90, 0x02,
+	0xca, 0x65, 0x39, 0xdd, 0x03, 0xf2, 0xf1, 0x64, 0x22, 0xc6, 0xfb, 0x2f, 0x95, 0x87, 0x9b, 0xd0,
+	0x52, 0x66, 0xfd, 0x7f, 0xd3, 0xb7, 0x07, 0x24, 0xfe, 0x08, 0x5e, 0x2a, 0xb6, 0x0d, 0x68, 0x29,
+	0xb3, 0xc6, 0xd8, 0xb6, 0x9e, 0x40, 0x35, 0x0d, 0x06, 0x13, 0x28, 0x79, 0x07, 0x35, 0x83, 0xe0,
+	0xe3, 0x93, 0xce, 0xd5, 0xb4, 0xe5, 0xc1, 0x1d, 0xdc, 0x85, 0x4a, 0xdf, 0xf3, 0xfd, 0xe9, 0x24,
+	0x14, 0xfb, 0x35, 0x44, 0xd6, 0x8f, 0x4f, 0x3a, 0x8d, 0xb4, 0xcb, 0xa7, 0x67, 0x46, 0xbc, 0x09,
+	0x57, 0x46, 0xc3, 0x20, 0x18, 0x8e, 0x07, 0xb5, 0x12, 0x69, 0x1e, 0x9f, 0x74, 0xcc, 0xb4, 0xdf,
+	0xbd, 0xd8, 0xb4, 0xf3, 0x10, 0x6a, 0xe7, 0x1b, 0xf8, 0x9e, 0x3b, 0x76, 0x07, 0xc2, 0xc7, 0x1f,
+	0x41, 0x35, 0xbd, 0x98, 0x71, 0x9d, 0x2b, 0xf6, 0x37, 0x69, 0x70, 0xd5, 0xf6, 0x66, 0xc6, 0xce,
+	0x9f, 0x57, 0x60, 0x25, 0x2e, 0x75, 0x96, 0xf0, 0x7d, 0xa8, 0x9c, 0x6f, 0x36, 0xbc, 0xca, 0xe7,
+	0xf7, 0x28, 0xc1, 0x3c, 0xbf, 0xf8, 0x8c, 0x59, 0x94, 0x9d, 0x8a, 0xb2, 0xf3, 0x51, 0xb6, 0x22,
+	0xea, 0x36, 0xbc, 0x39, 0xb7, 0x50, 0x70, 0x93, 0xab, 0x37, 0x12, 0xb1, 0xb8, 0x66, 0xf7, 0x30,
+	0xe3, 0x3a, 0xc2, 0x1f, 0xc0, 0x1b, 0x29, 0x0d, 0xc6, 0x26, 0xcf, 0x2f, 0x06, 0x52, 0xe7, 0x8a,
+	0x2d, 0xc0, 0x0c, 0x7c, 0x1f, 0x56, 0x73, 0xfa, 0x8d, 0xd7, 0xb9, 0x6e, 0x07, 0x10, 0xc2, 0xb5,
+	0x72, 0x2f, 0xb1, 0xdc, 0x80, 0x95, 0x8c, 0x38, 0xe3, 0x06, 0x57, 0x09, 0x3b, 0x59, 0xe3, 0x6a,
+	0x0d, 0x37, 0xf0, 0x67, 0x19, 0x5e, 0xe4, 0x9c, 0x65, 0x78, 0x49, 0xe9, 0x7a, 0x96, 0x97, 0xb4,
+	0x88, 0x33, 0x03, 0x7f, 0x05, 0x0d, 0xa5, 0xd6, 0xe2, 0x0d, 0x5e, 0xa4, 0xdb, 0x84, 0xf2, 0x42,
+	0x89, 0x96, 0x6f, 0xb9, 0x07, 0xa6, 0x42, 0x4f, 0x71, 0x8b, 0xeb, 0x35, 0x98, 0xb4, 0x79, 0x81,
+	0x04, 0xcb, 0xac, 0x9f, 0xcb, 0x5f, 0x6e, 0x99, 0x4f, 0x0f, 0x5b, 0x5c, 0xa3, 0xc3, 0x64, 0x9d,
+	0x6b, 0xe5, 0xd4, 0x98, 0xa5, 0xb2, 0xf3, 0xa9, 0x6c, 0x6d, 0x2a, 0x5b, 0x9f, 0xca, 0x01, 0x53,
+	0xa1, 0x57, 0xb8, 0xc5, 0xf5, 0xda, 0x48, 0xda, 0xbc, 0x40, 0xe2, 0xe2, 0x9c, 0x0a, 0x9d, 0xc1,
+	0x2d, 0xae, 0xd7, 0x34, 0xd2, 0xe6, 0x05, 0xd2, 0xc4, 0x8c, 0x4f, 0x3e, 0x7c, 0x76, 0x4a, 0x8d,
+	0xbf, 0x4e, 0xa9, 0xf1, 0xe2, 0x94, 0xa2, 0x7f, 0x4f, 0x29, 0xfa, 0x31, 0xa2, 0xe8, 0x69, 0x44,
+	0xd1, 0x6f, 0x11, 0x45, 0xbf, 0x47, 0x14, 0xfd, 0x11, 0x51, 0xf4, 0x2c, 0xa2, 0xe8, 0xef, 0x88,
+	0xa2, 0x7f, 0x22, 0x6a, 0xbc, 0x88, 0x28, 0xfa, 0xe5, 0x39, 0x35, 0x9e, 0x3e, 0xa7, 0xa8, 0xb7,
+	0x2c, 0xff, 0x02, 0xbc, 0xf7, 0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xca, 0x82, 0x38, 0xc9, 0x47,
+	0x0c, 0x00, 0x00,
 }

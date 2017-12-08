@@ -44,11 +44,10 @@ func (api *ObjectAPI) SetObject(ctx context.Context, req *pb.SetObjectRequest) (
 		return nil, unauthenticatedError(err)
 	}
 
-	obj := req.GetObject()
-	key := obj.GetKey()
+	key := req.GetKey()
 
 	// encode the value and store it
-	value := obj.GetValue()
+	value := req.GetValue()
 	data, err := encoding.EncodeObject(server.Object{Data: value})
 	if err != nil {
 		return nil, err
@@ -61,7 +60,7 @@ func (api *ObjectAPI) SetObject(ctx context.Context, req *pb.SetObjectRequest) (
 
 	// either delete the reference list, or set it.
 	refListkey := db.ReferenceListKey([]byte(label), key)
-	refList := obj.GetReferenceList()
+	refList := req.GetReferenceList()
 	if len(refList) == 0 {
 		err = api.db.Delete(refListkey)
 		if err != nil {
@@ -89,12 +88,16 @@ func (api *ObjectAPI) GetObject(ctx context.Context, req *pb.GetObjectRequest) (
 		return nil, unauthenticatedError(err)
 	}
 
-	var resp pb.GetObjectResponse
-	resp.Object, err = api.getObject([]byte(label), req.GetKey())
+	result, err := api.getObject([]byte(label), req.GetKey())
 	if err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &pb.GetObjectResponse{
+		Key:           result.Key,
+		Value:         result.Value,
+		Status:        result.Status,
+		ReferenceList: result.RefList,
+	}, nil
 }
 
 // GetObjectStream implements ObjectManagerServer.GetObjectStream
@@ -112,12 +115,17 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 
 	// if only one object is given, simply return the single object
 	if keyLength == 1 {
-		var object *pb.Object
-		object, err = api.getObject([]byte(label), keys[0])
+		var result *objectResult
+		result, err = api.getObject([]byte(label), keys[0])
 		if err != nil {
 			return err
 		}
-		return stream.SendMsg(object)
+		return stream.SendMsg(&pb.GetObjectStreamResponse{
+			Key:           result.Key,
+			Value:         result.Value,
+			Status:        result.Status,
+			ReferenceList: result.RefList,
+		})
 	}
 
 	jobCount := api.jobCount
@@ -126,7 +134,7 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 	}
 
 	inputCh := make(chan []byte, jobCount)
-	outputCh := make(chan pb.Object, jobCount)
+	outputCh := make(chan pb.GetObjectStreamResponse, jobCount)
 
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
@@ -159,18 +167,18 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 	group.Go(func() error {
 		// local variables reused for each iteration/item
 		var (
-			object          pb.Object
+			resp            pb.GetObjectStreamResponse
 			workerStopCount int
 		)
 
-		// loop while we can receive intermediate objects,
+		// loop while we can receive responses,
 		// or until the context is done
 		for {
 			select {
 			case <-ctx.Done():
 				return nil // early exist -> context is done
-			case object = <-outputCh:
-				if object.Key == nil {
+			case resp = <-outputCh:
+				if resp.Key == nil {
 					workerStopCount++
 					if workerStopCount == jobCount {
 						return nil // we're done!
@@ -178,7 +186,7 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 					continue
 				}
 			}
-			err := stream.Send(&object)
+			err := stream.Send(&resp)
 			if err != nil {
 				return err
 			}
@@ -190,10 +198,10 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 		group.Go(func() error {
 			// local variables reused for each iteration/item
 			var (
-				err          error
-				open         bool
-				key          []byte
-				outputObject *pb.Object
+				err    error
+				open   bool
+				key    []byte
+				result *objectResult
 			)
 			for {
 				// get the next object key,
@@ -204,7 +212,7 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 						select {
 						// try to return nil object,
 						// as to indicate this worker is finished
-						case outputCh <- pb.Object{}:
+						case outputCh <- pb.GetObjectStreamResponse{}:
 						case <-ctx.Done():
 						}
 						return nil
@@ -214,14 +222,20 @@ func (api *ObjectAPI) GetObjectStream(req *pb.GetObjectStreamRequest, stream pb.
 				}
 
 				// fetch + decode the object
-				outputObject, err = api.getObject([]byte(label), key)
+				result, err = api.getObject([]byte(label), key)
 				if err != nil {
 					return err
 				}
 
+				resp := pb.GetObjectStreamResponse{
+					Key:           result.Key,
+					Value:         result.Value,
+					Status:        result.Status,
+					ReferenceList: result.RefList,
+				}
 				// return the new object
 				select {
-				case outputCh <- *outputObject:
+				case outputCh <- resp:
 				case <-ctx.Done():
 					// return, context is done
 					return nil
@@ -756,8 +770,14 @@ func (api *ObjectAPI) SetReferenceList(ctx context.Context, req *pb.SetReference
 
 	refList := req.GetReferenceList()
 	if refList == nil {
-		return nil, errors.New("no references given to set")
+		// if refList is nil,
+		// we'll simply try to delete any existent refList,
+		// already stored for that key
+		refListKey := db.ReferenceListKey([]byte(label), req.GetKey())
+		err = api.db.Delete(refListKey)
+		return nil, err
 	}
+	// refList is given, let's encode and store it
 
 	// encode reference list
 	data, err := encoding.EncodeReferenceList(refList)
@@ -787,10 +807,22 @@ func (api *ObjectAPI) GetReferenceList(ctx context.Context, req *pb.GetReference
 		resp pb.GetReferenceListResponse
 	)
 
-	resp.ReferenceList, err = api.getReferenceList([]byte(label), key)
+	refListKey := db.ReferenceListKey([]byte(label), key)
+	refListData, err := api.db.Get(refListKey)
 	if err != nil {
+		if err == db.ErrNotFound {
+			resp.Status = pb.ObjectStatusMissing
+			return &resp, nil
+		}
 		return nil, err
 	}
+	resp.ReferenceList, err = encoding.DecodeReferenceList(refListData)
+	if err != nil {
+		resp.Status = pb.ObjectStatusCorrupted
+		return &resp, nil
+	}
+
+	resp.Status = pb.ObjectStatusOK
 	return &resp, nil
 }
 
@@ -822,10 +854,17 @@ func (api *ObjectAPI) AppendReferenceList(ctx context.Context, req *pb.AppendRef
 		err = api.db.Update(refListKey, cb)
 	}
 	if err != nil {
+		if err == encoding.ErrInvalidChecksum || err == encoding.ErrInvalidData {
+			return &pb.AppendReferenceListResponse{
+				Status: pb.ObjectStatusCorrupted,
+			}, nil
+		}
 		return nil, err
 	}
 
-	return &pb.AppendReferenceListResponse{}, nil
+	return &pb.AppendReferenceListResponse{
+		Status: pb.ObjectStatusOK,
+	}, nil
 }
 
 // DeleteReferenceList implements ObjectManagerServer.DeleteReferenceList
@@ -864,42 +903,59 @@ func (api *ObjectAPI) DeleteReferenceList(ctx context.Context, req *pb.DeleteRef
 // getObject is a private utility function,
 // which centralizes the logic to get an object's value and reference list,
 // and return it as it is.
-func (api *ObjectAPI) getObject(label, key []byte) (*pb.Object, error) {
-	object := pb.Object{Key: key}
+func (api *ObjectAPI) getObject(label, key []byte) (*objectResult, error) {
+	object := objectResult{Key: key, Status: pb.ObjectStatusOK}
 
 	// get data
 	dataKey := db.DataKey(label, key)
 	rawData, err := api.db.Get(dataKey)
 	if err != nil {
+		if err == db.ErrNotFound {
+			object.Status = pb.ObjectStatusMissing
+			return &object, nil
+		}
 		return nil, err
 	}
 	// decode and validate data
 	dataObject, err := encoding.DecodeObject(rawData)
 	if err != nil {
-		return nil, err
+		// invalid value -> corrupted object
+		object.Status = pb.ObjectStatusCorrupted
+		return &object, nil
 	}
 	object.Value = dataObject.Data
 
 	// get reference list (if it exists)
-	object.ReferenceList, err = api.getReferenceList(label, key)
-	if err != nil && err != db.ErrNotFound {
-		return nil, err
-	}
-	return &object, nil
-}
-
-// getReferenceList is a private utility function,
-// which centralizes the logic to get a reference list.
-func (api *ObjectAPI) getReferenceList(label, key []byte) ([]string, error) {
 	refListKey := db.ReferenceListKey(label, key)
 	refListData, err := api.db.Get(refListKey)
 	if err != nil {
+		if err == db.ErrNotFound {
+			// no ref list, we can simply return
+			return &object, nil
+		}
 		return nil, err
 	}
-	return encoding.DecodeReferenceList(refListData)
+
+	// decode existing reference list
+	if refList, err := encoding.DecodeReferenceList(refListData); err != nil {
+		// invalid ref list -> corrupted object
+		object.Status = pb.ObjectStatusCorrupted
+	} else {
+		// valid ref list
+		object.RefList = refList
+	}
+
+	// return object
+	return &object, nil
 }
 
-// convertStatus converts server.ObjectStatus to pb.CheckResponse_Status
+type objectResult struct {
+	Key, Value []byte
+	Status     pb.ObjectStatus
+	RefList    []string
+}
+
+// convertStatus converts server.ObjectStatus to pb.ObjectStatus
 func convertStatus(status server.ObjectStatus) pb.ObjectStatus {
 	s, ok := _ProtoObjectStatusMapping[status]
 	if !ok {

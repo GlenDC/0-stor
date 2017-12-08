@@ -14,19 +14,6 @@ option (gogoproto.unmarshaler_all) = true;
 
 // Zero-Stor Data Types
 
-message Namespace {
-    string label = 1;
-    int64 readRequestPerHour = 2;
-    int64 writeRequestPerHour = 3;
-    int64 nrObjects = 4;
-}
-
-message Object {
-    bytes key = 1;
-    bytes value = 2;
-    repeated string referenceList = 3;
-}
-
 enum ObjectStatus {
     ok = 0 [(gogoproto.enumvalue_customname) = "ObjectStatusOK"];
     corrupted = 1 [(gogoproto.enumvalue_customname) = "ObjectStatusCorrupted"];
@@ -61,7 +48,10 @@ service NamespaceManager {
 
 message GetNamespaceRequest {}
 message GetNamespaceResponse {
-    Namespace namespace = 1;
+    string label = 1;
+    int64 readRequestPerHour = 2;
+    int64 writeRequestPerHour = 3;
+    int64 nrObjects = 4;
 }
 
 // ObjectManager allows you to Manage objects and get info about them.
@@ -98,7 +88,7 @@ service ObjectManager {
 
     // Get multiple existing objects,
     // linked to the given keys.
-    rpc GetObjectStream (GetObjectStreamRequest) returns (stream Object) {}
+    rpc GetObjectStream (GetObjectStreamRequest) returns (stream GetObjectStreamResponse) {}
 
     // ExistObject returns whether or not an object,
     // for a given key, exists.
@@ -110,7 +100,7 @@ service ObjectManager {
 
     // DeleteObjects deletes multiple objects,
     // using the given keys.
-    // Deleting an non-existing object is concidered valid.
+    // Deleting an non-existing object is considered valid.
     rpc DeleteObjects (DeleteObjectsRequest) returns (DeleteObjectsResponse) {}
 
     // GetObjectStatus returns the status of an object,
@@ -130,6 +120,8 @@ service ObjectManager {
     // SetReferenceList allows you to create a new reference list
     // or overwrite an existing reference list,
     // for a given object.
+    // If no refList is given as part of the request,
+    // the stored refList, for the given key, will be deleted.
     rpc SetReferenceList(SetReferenceListRequest) returns (SetReferenceListResponse) {}
 
     // GetReferenceList returns an existing reference list
@@ -152,7 +144,9 @@ service ObjectManager {
 }
 
 message SetObjectRequest {
-    Object object = 1;
+    bytes key = 1;
+    bytes value = 2;
+    repeated string referenceList = 3;
 }
 message SetObjectResponse {}
 
@@ -160,11 +154,20 @@ message GetObjectRequest {
     bytes key = 1;
 }
 message GetObjectResponse {
-    Object object = 1;
+    bytes key = 1;
+    bytes value = 2;
+    ObjectStatus status = 3;
+    repeated string referenceList = 4;
 }
 
 message GetObjectStreamRequest {
     repeated bytes keys = 1;
+}
+message GetObjectStreamResponse {
+    bytes key = 1;
+    bytes value = 2;
+    ObjectStatus status = 3;
+    repeated string referenceList = 4;
 }
 
 message ExistObjectRequest {
@@ -219,13 +222,16 @@ message GetReferenceListRequest {
 }
 message GetReferenceListResponse {
     repeated string referenceList = 1;
+    ObjectStatus status = 2;
 }
 
 message AppendReferenceListRequest {
     bytes key = 1;
     repeated string referenceList = 2;
 }
-message AppendReferenceListResponse {}
+message AppendReferenceListResponse {
+    ObjectStatus status = 1;
+}
 
 message DeleteReferenceListRequest {
     bytes key = 1;

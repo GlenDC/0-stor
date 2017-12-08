@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zero-os/0-stor/client/data"
 	"github.com/zero-os/0-stor/client/itsyouonline"
-	"github.com/zero-os/0-stor/client/stor"
 	"github.com/zero-os/0-stor/server/api"
 	pb "github.com/zero-os/0-stor/server/api/grpc/schema"
 	"github.com/zero-os/0-stor/server/db/memory"
@@ -36,7 +36,7 @@ func TestServerMsgSize(t *testing.T) {
 				require.NoError(err, "server should have started listening")
 			}()
 
-			cl, err := stor.NewClient(srv.Address(), "testnamespace", "")
+			cl, err := data.NewClient(srv.Address(), "testnamespace", "")
 			require.NoError(err, "client should have been created")
 
 			key := []byte("foo")
