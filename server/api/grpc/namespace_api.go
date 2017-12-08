@@ -3,6 +3,7 @@ package grpc
 import (
 	"golang.org/x/net/context"
 
+	serverAPI "github.com/zero-os/0-stor/server/api"
 	pb "github.com/zero-os/0-stor/server/api/grpc/schema"
 	"github.com/zero-os/0-stor/server/db"
 	"github.com/zero-os/0-stor/server/stats"
@@ -26,9 +27,12 @@ func NewNamespaceAPI(db db.DB) *NamespaceAPI {
 	}
 }
 
-// Get implements NamespaceManagerServer.Get
-func (api *NamespaceAPI) Get(ctx context.Context, req *pb.GetNamespaceRequest) (*pb.GetNamespaceReply, error) {
-	label := req.GetLabel()
+// GetNamespace implements NamespaceManagerServer.GetNamespace
+func (api *NamespaceAPI) GetNamespace(ctx context.Context, req *pb.GetNamespaceRequest) (*pb.GetNamespaceResponse, error) {
+	label, err := extractStringFromContext(ctx, serverAPI.GRPCMetaLabelKey)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
 
 	count, err := db.CountKeys(api.db, []byte(label))
 	if err != nil {
@@ -36,7 +40,7 @@ func (api *NamespaceAPI) Get(ctx context.Context, req *pb.GetNamespaceRequest) (
 	}
 	read, write := stats.Rate(label)
 
-	resp := &pb.GetNamespaceReply{
+	resp := &pb.GetNamespaceResponse{
 		Namespace: &pb.Namespace{
 			Label:               label,
 			ReadRequestPerHour:  read,
