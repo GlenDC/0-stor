@@ -6,23 +6,6 @@ import (
 )
 
 var (
-	// ErrNotFound is an error returned
-	// when a key could not be found,
-	// while trying to get an object.
-	ErrNotFound = errors.New("key not found")
-
-	// ErrNilKey is an error returned
-	// when a nil key was given, while one was expected.
-	ErrNilKey = errors.New("empty key not allowed")
-
-	// ErrNilData is an error returned
-	// when nil data was given, while data was expected.
-	ErrNilData = errors.New("empty data not allowed")
-
-	// ErrCorrupted is an error returned
-	// when (part of) an object is corrupted.
-	ErrCorrupted = errors.New("content is corrupted")
-
 	// ErrInvalidResult is an error returned
 	// when data was received from the zstordb server,
 	// but it wasn't valid.
@@ -48,31 +31,12 @@ type (
 	}
 
 	// Object contains the information stored for an object.
-	// The Value and RefList are stored separately,
+	// The Data and ReferenceList are stored separately,
 	// but are composed together in this data structure upon request.
 	Object struct {
 		Key           []byte
-		Value         []byte
+		Data          []byte
 		ReferenceList []string
-	}
-
-	// ObjectResult is the (stream) data type,
-	// used as the result data type, when fetching multiple objects.
-	//
-	// Only in case of an error, the Error property will be set,
-	// in all other cases only the Object property will be set.
-	ObjectResult struct {
-		Object Object
-		Error  error
-	}
-
-	// ObjectExistResult is the (stream) data type,
-	// used as the result data type,
-	// when requesting the status of existence of multiple objects.
-	ObjectExistResult struct {
-		Key    []byte
-		Exists bool
-		Error  error
 	}
 
 	// ObjectKeyResult is the (stream) data type,
@@ -84,18 +48,6 @@ type (
 	ObjectKeyResult struct {
 		Key   []byte
 		Error error
-	}
-
-	// ObjectStatusResult is the (stream) data type,
-	// used as the result data type,
-	// when fetching the object status of one or multiple objects.
-	//
-	// Only in case of an error, the Error property will be set,
-	// in all other cases only the Key and Status properties will be set.
-	ObjectStatusResult struct {
-		Key    []byte
-		Status ObjectStatus
-		Error  error
 	}
 )
 

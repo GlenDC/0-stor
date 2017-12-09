@@ -81,71 +81,56 @@ message GetNamespaceResponse {
 service ObjectManager {
     // Set an object, either overwriting an existing key,
     // or creating a new one.
+    // If no reference list is given, no (stored) reference list is touched.
     rpc SetObject (SetObjectRequest) returns (SetObjectResponse) {}
 
     // Get an existing object, linked to a given key.
     rpc GetObject (GetObjectRequest) returns (GetObjectResponse) {}
 
-    // Get multiple existing objects,
-    // linked to the given keys.
-    rpc GetObjectStream (GetObjectStreamRequest) returns (stream GetObjectStreamResponse) {}
-
-    // ExistObject returns whether or not an object,
-    // for a given key, exists.
-    rpc ExistObject (ExistObjectRequest) returns (ExistObjectResponse) {}
-
-    // ExistObject returns whether or not
-    // one or multiple objects, or (a) given key(s), exists.
-    rpc ExistObjectStream (ExistObjectStreamRequest) returns (stream ExistObjectStreamResponse) {}
-
-    // DeleteObjects deletes multiple objects,
-    // using the given keys.
+    // DeleteObject deletes an object.
     // Deleting an non-existing object is considered valid.
-    rpc DeleteObjects (DeleteObjectsRequest) returns (DeleteObjectsResponse) {}
+    rpc DeleteObject (DeleteObjectRequest) returns (DeleteObjectResponse) {}
 
     // GetObjectStatus returns the status of an object,
     // indicating whether it's OK, missing or corrupt.
     rpc GetObjectStatus (GetObjectStatusRequest) returns (GetObjectStatusResponse) {}
 
-    // GetObjectStatusStream returns the status of
-    // all objects for which a key was given in the request,
-    // indicating for each of them whether they're
-    // OK, missing or corrupt.
-    rpc GetObjectStatusStream (GetObjectStatusStreamRequest) returns (stream GetObjectStatusStreamResponse) {}
-
-    // ListObjectKeyStream lists the keys of
+    // ListObjectKeys lists the keys of
     // all stored objects within the namespace (identified by the given label).
-    rpc ListObjectKeyStream (ListObjectKeyStreamRequest) returns (stream ListObjectKeyStreamResponse) {}
+    rpc ListObjectKeys (ListObjectKeysRequest) returns (stream ListObjectKeysResponse) {}
 
     // SetReferenceList allows you to create a new reference list
     // or overwrite an existing reference list,
     // for a given object.
-    // If no refList is given as part of the request,
-    // the stored refList, for the given key, will be deleted.
     rpc SetReferenceList(SetReferenceListRequest) returns (SetReferenceListResponse) {}
 
     // GetReferenceList returns an existing reference list
-    // for a given object. An error is returned in case no
-    // reference exists for that object.
+    // for a given object.
     rpc GetReferenceList(GetReferenceListRequest) returns (GetReferenceListResponse) {}
+
+     // GetReferenceCount returns the amount of references stored for the given object.
+    rpc GetReferenceCount(GetReferenceCountRequest) returns (GetReferenceCountResponse) {}
 
     // AppendReferenceList appends the given references
     // to the end of the reference list of the given object.
     // If no reference list existed for this object prior to this call,
     // this method will behave the same as SetReferenceList.
-    rpc AppendReferenceList(AppendReferenceListRequest) returns (AppendReferenceListResponse) {}
+    rpc AppendToReferenceList(AppendToReferenceListRequest) returns (AppendToReferenceListResponse) {}
 
-    // DeleteReferenceList removes the references of the given list,
+    // DeleteFromReferenceList deletes the references of the given list,
     // from the references of the existing list.
-    // It also returns all references which couldn't be deleted
-    // from the existing list, because these references did not
-    // exist in the given reference list.
+    // In case deleted succesfully, it will also return the new count of the list,
+    // as part of the response.
+    rpc DeleteFromReferenceList(DeleteFromReferenceListRequest) returns (DeleteFromReferenceListResponse) {}
+
+    // DeleteReferenceList deletes entirely stored reference list.
+    // If no reference list was stored for the object prior to this call, nothing will happen.
     rpc DeleteReferenceList(DeleteReferenceListRequest) returns (DeleteReferenceListResponse) {}
 }
 
 message SetObjectRequest {
     bytes key = 1;
-    bytes value = 2;
+    bytes data = 2;
     repeated string referenceList = 3;
 }
 message SetObjectResponse {}
@@ -154,41 +139,14 @@ message GetObjectRequest {
     bytes key = 1;
 }
 message GetObjectResponse {
-    bytes key = 1;
-    bytes value = 2;
-    ObjectStatus status = 3;
-    repeated string referenceList = 4;
+    bytes data = 1;
+    repeated string referenceList = 2;
 }
 
-message GetObjectStreamRequest {
-    repeated bytes keys = 1;
-}
-message GetObjectStreamResponse {
-    bytes key = 1;
-    bytes value = 2;
-    ObjectStatus status = 3;
-    repeated string referenceList = 4;
-}
-
-message ExistObjectRequest {
+message DeleteObjectRequest {
     bytes key = 1;
 }
-message ExistObjectResponse {
-    bool exists = 1;
-}
-
-message ExistObjectStreamRequest {
-    repeated bytes keys = 1;
-}
-message ExistObjectStreamResponse {
-    bytes key = 1;
-    bool exists = 2;
-}
-
-message DeleteObjectsRequest {
-    repeated bytes keys = 1;
-}
-message DeleteObjectsResponse {
+message DeleteObjectResponse {
 }
 
 message GetObjectStatusRequest {
@@ -198,16 +156,8 @@ message GetObjectStatusResponse {
     ObjectStatus status = 1;
 }
 
-message GetObjectStatusStreamRequest {
-    repeated bytes keys = 1;
-}
-message GetObjectStatusStreamResponse {
-    bytes key = 1;
-    ObjectStatus status = 2;
-}
-
-message ListObjectKeyStreamRequest {}
-message ListObjectKeyStreamResponse {
+message ListObjectKeysRequest {}
+message ListObjectKeysResponse {
     bytes key = 1;
 }
 
@@ -222,20 +172,32 @@ message GetReferenceListRequest {
 }
 message GetReferenceListResponse {
     repeated string referenceList = 1;
-    ObjectStatus status = 2;
 }
 
-message AppendReferenceListRequest {
+message GetReferenceCountRequest {
+    bytes key = 1;
+}
+message GetReferenceCountResponse {
+    int64 count = 1;
+}
+
+message AppendToReferenceListRequest {
     bytes key = 1;
     repeated string referenceList = 2;
 }
-message AppendReferenceListResponse {
-    ObjectStatus status = 1;
+message AppendToReferenceListResponse {
+}
+
+message DeleteFromReferenceListRequest {
+    bytes key = 1;
+    repeated string referenceList = 2;
+}
+message DeleteFromReferenceListResponse {
+    int64 count = 1;
 }
 
 message DeleteReferenceListRequest {
     bytes key = 1;
-    repeated string referenceList = 2;
 }
 message DeleteReferenceListResponse {
 }
