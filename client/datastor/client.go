@@ -1,4 +1,4 @@
-package data
+package datastor
 
 import "context"
 
@@ -62,6 +62,11 @@ type Client interface {
 	//
 	// rpctypes.ErrNilKey is returned in case no key was given.
 	GetObjectStatus(key []byte) (ObjectStatus, error)
+
+	// ExistObject returns whether or not an object exists.
+	//
+	// rpctypes.ErrNilKey is returned in case no key was given.
+	ExistObject(key []byte) (bool, error)
 
 	// ListObjectKeyIterator returns an iterator,
 	// from which the keys of all stored objects within the namespace

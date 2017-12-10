@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zero-os/0-stor/client/data"
-	dataGRPC "github.com/zero-os/0-stor/client/data/grpc"
+	"github.com/zero-os/0-stor/client/datastor"
+	storgrpc "github.com/zero-os/0-stor/client/datastor/grpc"
 	"github.com/zero-os/0-stor/client/itsyouonline"
 	"github.com/zero-os/0-stor/server/api/grpc/rpctypes"
 	pb "github.com/zero-os/0-stor/server/api/grpc/schema"
@@ -36,12 +36,12 @@ func TestServerMsgSize(t *testing.T) {
 				require.NoError(err, "server should have started listening")
 			}()
 
-			cl, err := dataGRPC.NewClient(srv.Address(), "testnamespace", "", 0)
+			cl, err := storgrpc.NewClient(srv.Address(), "testnamespace", "", 0)
 			require.NoError(err, "client should have been created")
 
 			key := []byte("foo")
 
-			bigData := make([]byte, (maxSize+10)*mib)
+			bigData := make([]byte, (maxSize*mib)+10)
 			_, err = rand.Read(bigData)
 			require.NoError(err, "should have read random data")
 
@@ -49,13 +49,13 @@ func TestServerMsgSize(t *testing.T) {
 			_, err = rand.Read(smallData)
 			require.NoError(err, "should have read random data")
 
-			err = cl.SetObject(data.Object{
+			err = cl.SetObject(datastor.Object{
 				Key:  key,
 				Data: bigData,
 			})
 			require.Error(err, "should have exceeded message max size")
 
-			err = cl.SetObject(data.Object{
+			err = cl.SetObject(datastor.Object{
 				Key:  key,
 				Data: smallData,
 			})
@@ -63,7 +63,7 @@ func TestServerMsgSize(t *testing.T) {
 
 			status, err := cl.GetObjectStatus(key)
 			require.NoError(err, "object should exist")
-			require.Equal(data.ObjectStatusOK, status, "object should exists")
+			require.Equal(datastor.ObjectStatusOK, status, "object should exists")
 
 			obj, err := cl.GetObject(key)
 			require.NoError(err, "should be able to read message")

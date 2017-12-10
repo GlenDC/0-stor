@@ -1,15 +1,22 @@
-package data
+package datastor
 
 import (
 	"errors"
 	"runtime"
 )
 
+// Errors that get returned in case the server returns
+// an unexpected results. The client can return these errors,
+// but if any of these errors get returned,
+// it means there is a bug in the zstordb code,
+// and it should be reported at:
+// http://github.com/zero-os/0-stor/issues
 var (
-	// ErrInvalidResult is an error returned
-	// when data was received from the zstordb server,
-	// but it wasn't valid.
-	ErrInvalidResult = errors.New("invalid result received")
+	ErrMissingKey     = errors.New("zstor: missing object key (zstordb bug?)")
+	ErrMissingData    = errors.New("zstor: missing object data (zstordb bug?)")
+	ErrMissingRefList = errors.New("zstor: missing object reference list (zstordb bug?)")
+	ErrInvalidStatus  = errors.New("zstor: invalid object status (zstordb bug?)")
+	ErrInvalidLabel   = errors.New("zstor: invalid namespace label (zstordb bug?)")
 )
 
 var (
