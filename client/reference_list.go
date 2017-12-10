@@ -22,36 +22,56 @@ func (c *Client) SetReferenceListWithMeta(md *metastor.Data, refList []string) e
 	return c.updateRefListWithMeta(md, refList, refListOpSet)
 }
 
-// AppendReferenceList adds some reference to the reference list of the object pointed by key
-func (c *Client) AppendReferenceList(key []byte, refList []string) error {
+// AppendToReferenceList appends some reference to the (non-)existing reference list
+// of the object pointed by key.
+func (c *Client) AppendToReferenceList(key []byte, refList []string) error {
 	md, err := c.metaCli.GetMetadata(key)
 	if err != nil {
 		return err
 	}
-	return c.AppendReferenceListWithMeta(md, refList)
+	return c.AppendToReferenceListWithMeta(md, refList)
 }
 
-// AppendReferenceListWithMeta is the same as AppendReferenceList but take metadata instead of key
-// as argument
-func (c *Client) AppendReferenceListWithMeta(md *metastor.Data, refList []string) error {
-	return c.updateRefListWithMeta(md, refList, refListOpAppend)
+// AppendToReferenceListWithMeta is the same as AppendToReferenceList
+// but take metadata instead of key as argument
+func (c *Client) AppendToReferenceListWithMeta(md *metastor.Data, refList []string) error {
+	return c.updateRefListWithMeta(md, refList, refListOpAppendTo)
 }
 
-// RemoveReferenceList removes some reference from the reference list of the object pointed by key.
+// DeleteFromReferenceList deletes some reference from the (non-)existing
+// reference list of the object pointed by key.
 // It wont return error in case of the object doesn't have some elements of the `refList`.
-func (c *Client) RemoveReferenceList(key []byte, refList []string) error {
+func (c *Client) DeleteFromReferenceList(key []byte, refList []string) error {
 	md, err := c.metaCli.GetMetadata(key)
 	if err != nil {
 		return err
 	}
-	return c.RemoveReferenceListWithMeta(md, refList)
+	return c.DeleteFromReferenceListWithMeta(md, refList)
 }
 
-// RemoveReferenceListWithMeta is the same as RemoveReferenceList but take metadata
+// DeleteFromReferenceListWithMeta is the same as DeleteFromReferenceList but take metadata
 // instead of key as argument
-func (c *Client) RemoveReferenceListWithMeta(md *metastor.Data, refList []string) error {
-	return c.updateRefListWithMeta(md, refList, refListOpRemove)
+func (c *Client) DeleteFromReferenceListWithMeta(md *metastor.Data, refList []string) error {
+	return c.updateRefListWithMeta(md, refList, refListOpDeleteFrom)
 }
+
+// DeleteReferenceList deletes the (non-)existing
+// reference list of the object pointed by key.
+func (c *Client) DeleteReferenceList(key []byte) error {
+	md, err := c.metaCli.GetMetadata(key)
+	if err != nil {
+		return err
+	}
+	return c.DeleteReferenceListWithMeta(md)
+}
+
+// DeleteReferenceListWithMeta is the same as DeleteReferenceList but take metadata
+// instead of key as argument
+func (c *Client) DeleteReferenceListWithMeta(md *metastor.Data) error {
+	return c.updateRefListWithMeta(md, nil, refListOpDelete)
+}
+
+// TODO: support GetReferenceList?!
 
 func (c *Client) updateRefListWithMeta(md *metastor.Data, refList []string, op int) error {
 	for _, chunk := range md.Chunks {
@@ -77,11 +97,13 @@ func (c *Client) updateRefListWithMeta(md *metastor.Data, refList []string, op i
 				switch op {
 				case refListOpSet:
 					err = storCli.SetReferenceList(chunk.Key, refList)
-				case refListOpAppend:
+				case refListOpAppendTo:
 					err = storCli.AppendToReferenceList(chunk.Key, refList)
-				case refListOpRemove:
+				case refListOpDeleteFrom:
 					// TODO: return the count value to the user?!
 					_, err = storCli.DeleteFromReferenceList(chunk.Key, refList)
+				case refListOpDelete:
+					err = storCli.DeleteReferenceList(chunk.Key)
 				default:
 					err = fmt.Errorf("wrong operation: %v", op)
 				}
@@ -105,6 +127,7 @@ func (c *Client) updateRefListWithMeta(md *metastor.Data, refList []string, op i
 const (
 	_ = iota
 	refListOpSet
-	refListOpAppend
-	refListOpRemove
+	refListOpAppendTo
+	refListOpDeleteFrom
+	refListOpDelete
 )
