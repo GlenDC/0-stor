@@ -46,13 +46,13 @@ func (api *ObjectAPI) SetObject(ctx context.Context, req *pb.SetObjectRequest) (
 	}
 
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 
 	// encode the data and store it
 	data := req.GetData()
-	if data == nil {
+	if len(data) == 0 {
 		return nil, rpctypes.ErrGRPCNilData
 	}
 	encodedData, err := encoding.EncodeObject(server.Object{Data: data})
@@ -93,7 +93,7 @@ func (api *ObjectAPI) GetObject(ctx context.Context, req *pb.GetObjectRequest) (
 	}
 
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 
@@ -148,7 +148,7 @@ func (api *ObjectAPI) DeleteObject(ctx context.Context, req *pb.DeleteObjectRequ
 	}
 
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 
@@ -181,7 +181,7 @@ func (api *ObjectAPI) GetObjectStatus(ctx context.Context, req *pb.GetObjectStat
 	}
 
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 
@@ -305,11 +305,11 @@ func (api *ObjectAPI) SetReferenceList(ctx context.Context, req *pb.SetReference
 
 	// get parameters and ensure they're given
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 	refList := req.GetReferenceList()
-	if refList == nil {
+	if len(refList) == 0 {
 		return nil, rpctypes.ErrGRPCNilRefList
 	}
 
@@ -338,7 +338,7 @@ func (api *ObjectAPI) GetReferenceList(ctx context.Context, req *pb.GetReference
 	}
 
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 
@@ -372,7 +372,7 @@ func (api *ObjectAPI) GetReferenceCount(ctx context.Context, req *pb.GetReferenc
 	}
 
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 
@@ -410,17 +410,17 @@ func (api *ObjectAPI) AppendToReferenceList(ctx context.Context, req *pb.AppendT
 
 	// get parameters and ensure they're given
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 	refList := req.GetReferenceList()
-	if refList == nil {
+	if len(refList) == 0 {
 		return nil, rpctypes.ErrGRPCNilRefList
 	}
 
 	// define update callback
 	cb := func(refListData []byte) ([]byte, error) {
-		if refListData == nil {
+		if len(refListData) == 0 {
 			// if input of update callback is nil, the data didn't exist yet,
 			// in which case we can simply encode the target ref list as it is
 			return encoding.EncodeReferenceList(refList)
@@ -457,18 +457,18 @@ func (api *ObjectAPI) DeleteFromReferenceList(ctx context.Context, req *pb.Delet
 
 	// get parameters and ensure they're given
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 	refList := req.GetReferenceList()
-	if refList == nil {
+	if len(refList) == 0 {
 		return nil, rpctypes.ErrGRPCNilRefList
 	}
 
 	var count int
 	// define update callback
 	cb := func(refListData []byte) ([]byte, error) {
-		if refListData == nil {
+		if len(refListData) == 0 {
 			// if input of update callback is nil, the data didn't exist yet,
 			// in which case we can simply return nil, as we don't need to do anything
 			return nil, nil
@@ -509,7 +509,7 @@ func (api *ObjectAPI) DeleteReferenceList(ctx context.Context, req *pb.DeleteRef
 
 	// get key parameter and ensure it's given
 	key := req.GetKey()
-	if key == nil {
+	if len(key) == 0 {
 		return nil, rpctypes.ErrGRPCNilKey
 	}
 

@@ -902,7 +902,7 @@ func (c *Client) getStor(shard string) (datastor.Client, error) {
 
 	// if not create the client and put in cache
 	namespace := fmt.Sprintf("%s_0stor_%s", c.policy.Organization, c.policy.Namespace)
-	cl, err := storgrpc.NewClient(shard, namespace, c.iyoToken, 0)
+	cl, err := storgrpc.NewClient(shard, namespace, c.iyoToken)
 	if err != nil {
 		return nil, err
 	}

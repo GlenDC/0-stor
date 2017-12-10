@@ -21,10 +21,10 @@ func TestNewClientPanics(t *testing.T) {
 	require := require.New(t)
 
 	require.Panics(func() {
-		NewClient("", "", "", 0)
+		NewClient("", "", "")
 	}, "no address given")
 	require.Panics(func() {
-		NewClient("foo", "", "", 0)
+		NewClient("foo", "", "")
 	}, "no label given")
 }
 
@@ -145,7 +145,7 @@ func TestClientExistObject(t *testing.T) {
 
 	os.status = pb.ObjectStatusCorrupted
 	exists, err = client.ExistObject(nil)
-	require.Equal(datastor.ErrCorruptedData, err)
+	require.Equal(datastor.ErrObjectCorrupted, err)
 	require.False(exists)
 
 	os.status = pb.ObjectStatusOK
@@ -225,7 +225,7 @@ func TestClientListObjectKeys(t *testing.T) {
 	require := require.New(t)
 
 	var os stubObjectService
-	client := Client{objService: &os, jobCount: 1}
+	client := Client{objService: &os}
 
 	require.Panics(func() {
 		client.ListObjectKeyIterator(nil)

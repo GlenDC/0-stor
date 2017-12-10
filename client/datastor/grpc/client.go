@@ -25,8 +25,6 @@ type Client struct {
 	objService       pb.ObjectManagerClient
 	namespaceService pb.NamespaceManagerClient
 
-	jobCount int
-
 	jwtToken        string
 	jwtTokenDefined bool
 	label           string
@@ -34,13 +32,10 @@ type Client struct {
 
 // NewClient create a new data client,
 // which allows you to connect to a zstordb using a GRPC interface.
-//
-// `jobCount` defines the maximum number of jobs that are allowed to be run,
-// in all async (iterator) methods of this client.
-// If the amount of jobs required is less than the max amount of jobs,
-// specified by the `jobCount` parameter, only the jobs required
-// will be run.
-func NewClient(addr, label, jwtToken string, jobCount int) (*Client, error) {
+// The addres to the zstordb server is required,
+// and so is the label, as the latter serves as the identifier of the to be used namespace.
+// The jwtToken is required, only if the connected zstordb server requires this.
+func NewClient(addr, label, jwtToken string) (*Client, error) {
 	if len(addr) == 0 {
 		panic("no zstordb address give")
 	}
@@ -58,15 +53,10 @@ func NewClient(addr, label, jwtToken string, jobCount int) (*Client, error) {
 		return nil, err
 	}
 
-	if jobCount <= 0 {
-		jobCount = datastor.DefaultJobCount
-	}
-
 	return &Client{
 		conn:             conn,
 		objService:       pb.NewObjectManagerClient(conn),
 		namespaceService: pb.NewNamespaceManagerClient(conn),
-		jobCount:         jobCount,
 		jwtToken:         jwtToken,
 		jwtTokenDefined:  len(jwtToken) != 0,
 		label:            label,
@@ -99,7 +89,7 @@ func (c *Client) GetObject(key []byte) (*datastor.Object, error) {
 		Data:          resp.GetData(),
 		ReferenceList: resp.GetReferenceList(),
 	}
-	if dataObject.Data == nil {
+	if len(dataObject.Data) == 0 {
 		return nil, datastor.ErrMissingData
 	}
 	return dataObject, nil
@@ -136,7 +126,7 @@ func (c *Client) ExistObject(key []byte) (bool, error) {
 	case datastor.ObjectStatusOK:
 		return true, nil
 	case datastor.ObjectStatusCorrupted:
-		return false, datastor.ErrCorruptedData
+		return false, datastor.ErrObjectCorrupted
 	default:
 		return false, nil
 	}
@@ -179,55 +169,57 @@ func (c *Client) ListObjectKeyIterator(ctx context.Context) (<-chan datastor.Obj
 	}
 
 	// create output channel and start fetching from the stream
-	ch := make(chan datastor.ObjectKeyResult, c.jobCount)
-	for i := 0; i < c.jobCount; i++ {
-		group.Go(func() error {
-			// fetch all objects possible
-			var (
-				input *pb.ListObjectKeysResponse
-			)
-			for {
-				select {
-				case <-ctx.Done():
-					return nil
-				default:
-				}
-
-				// receive the next object, and check error as a first task to do
-				input, err = stream.Recv()
-				if err != nil {
-					if err == io.EOF {
-						// stream is done
-						return nil
-					}
-					err = toContextErr(ctx, err)
-
-					// an unexpected error has happened, exit with an error
-					log.Errorf(
-						"an error was received while receiving the exists state of an object for: %v",
-						err)
-					select {
-					case ch <- datastor.ObjectKeyResult{Error: err}:
-					case <-ctx.Done():
-					}
-					return err
-				}
-
-				// create the error/valid data result
-				result := datastor.ObjectKeyResult{Key: input.GetKey()}
-				if result.Key == nil {
-					result.Error = datastor.ErrMissingKey
-				}
-
-				// return the result for the given key
-				select {
-				case ch <- result:
-				case <-ctx.Done():
-					return nil
-				}
+	ch := make(chan datastor.ObjectKeyResult, 1)
+	group.Go(func() error {
+		// fetch all objects possible
+		var (
+			input *pb.ListObjectKeysResponse
+		)
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
 			}
-		})
-	}
+
+			// receive the next object, and check error as a first task to do
+			input, err = stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					// stream is done
+					return nil
+				}
+				err = toContextErr(ctx, err)
+
+				// an unexpected error has happened, exit with an error
+				log.Errorf(
+					"an error was received while receiving the key of an object for: %v",
+					err)
+				select {
+				case ch <- datastor.ObjectKeyResult{Error: err}:
+				case <-ctx.Done():
+				}
+				return err
+			}
+
+			// create the error/valid data result
+			result := datastor.ObjectKeyResult{Key: input.GetKey()}
+			if len(result.Key) == 0 {
+				result.Error = datastor.ErrMissingKey
+			}
+
+			// return the result for the given key
+			select {
+			case ch <- result:
+			case <-ctx.Done():
+				return result.Error
+			}
+			if result.Error != nil {
+				// if the result was an error, return also the error
+				return result.Error
+			}
+		}
+	})
 
 	// launch the err group routine,
 	// to close the output ch
@@ -263,7 +255,7 @@ func (c *Client) GetReferenceList(key []byte) ([]string, error) {
 		return nil, toErr(err)
 	}
 	refList := resp.GetReferenceList()
-	if refList == nil {
+	if len(refList) == 0 {
 		return nil, datastor.ErrMissingRefList
 	}
 	return refList, nil
@@ -336,9 +328,19 @@ func (c *Client) contextWithMetadata(ctx context.Context) context.Context {
 func toErr(err error) error {
 	err = rpctypes.Error(err)
 	if _, ok := err.(rpctypes.ZStorError); ok {
+		if err, ok := expectedErrorMapping[err]; ok {
+			return err
+		}
 		return err
 	}
 	return err
+}
+
+var expectedErrorMapping = map[error]error{
+	rpctypes.ErrKeyNotFound:            datastor.ErrKeyNotFound,
+	rpctypes.ErrObjectDataCorrupted:    datastor.ErrObjectDataCorrupted,
+	rpctypes.ErrObjectRefListCorrupted: datastor.ErrObjectRefListCorrupted,
+	rpctypes.ErrPermissionDenied:       datastor.ErrPermissionDenied,
 }
 
 func toContextErr(ctx context.Context, err error) error {

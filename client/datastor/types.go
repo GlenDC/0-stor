@@ -2,7 +2,6 @@ package datastor
 
 import (
 	"errors"
-	"runtime"
 )
 
 // Errors that get returned in case the server returns
@@ -19,16 +18,14 @@ var (
 	ErrInvalidLabel   = errors.New("zstor: invalid namespace label (zstordb bug?)")
 )
 
-// Non-buggy client-specific errors
+// Errors that can be expected to be returned by a zstordb server,
+// in "normal" scenarios.
 var (
-	ErrCorruptedData = errors.New("zstor: data is corrupted")
-)
-
-var (
-	// DefaultJobCount is the default job count that is used
-	// for a data client, for those (iterator) methods,
-	// that support fetching over multiple goroutines at once.
-	DefaultJobCount = runtime.NumCPU()
+	ErrKeyNotFound            = errors.New("zstordb: key is no found")
+	ErrObjectDataCorrupted    = errors.New("zstordb: object data is corrupted")
+	ErrObjectCorrupted        = errors.New("zstordb: object (data and/or refList) is corrupted")
+	ErrObjectRefListCorrupted = errors.New("zstordb: object reflist is corrupted")
+	ErrPermissionDenied       = errors.New("zstordb: JWT token does not permit requested action")
 )
 
 type (
