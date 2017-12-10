@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"io"
 	"math"
 
@@ -134,14 +133,12 @@ func (c *Client) ExistObject(key []byte) (bool, error) {
 		return false, err
 	}
 	switch status {
-	case datastor.ObjectStatusMissing:
-		return false, nil
 	case datastor.ObjectStatusOK:
 		return true, nil
 	case datastor.ObjectStatusCorrupted:
-		return false, errors.New("existing object has corrupted data/refList")
+		return false, datastor.ErrCorruptedData
 	default:
-		return false, datastor.ErrInvalidStatus
+		return false, nil
 	}
 }
 
@@ -232,8 +229,10 @@ func (c *Client) ListObjectKeyIterator(ctx context.Context) (<-chan datastor.Obj
 		})
 	}
 
-	// launch the err group, to cancel the context
+	// launch the err group routine,
+	// to close the output ch
 	go func() {
+		defer close(ch)
 		err := group.Wait()
 		if err != nil {
 			log.Errorf(

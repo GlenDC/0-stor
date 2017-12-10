@@ -15,9 +15,9 @@ option (gogoproto.unmarshaler_all) = true;
 // Zero-Stor Data Types
 
 enum ObjectStatus {
-    ok = 0 [(gogoproto.enumvalue_customname) = "ObjectStatusOK"];
-    corrupted = 1 [(gogoproto.enumvalue_customname) = "ObjectStatusCorrupted"];
-    missing = 2 [(gogoproto.enumvalue_customname) = "ObjectStatusMissing"];
+    missing = 0 [(gogoproto.enumvalue_customname) = "ObjectStatusMissing"];
+    ok = 1 [(gogoproto.enumvalue_customname) = "ObjectStatusOK"];
+    corrupted = 2 [(gogoproto.enumvalue_customname) = "ObjectStatusCorrupted"];
 }
 
 // NamespaceManager allows you to retrieve information about a namespace.

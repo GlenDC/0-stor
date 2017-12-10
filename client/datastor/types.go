@@ -19,6 +19,11 @@ var (
 	ErrInvalidLabel   = errors.New("zstor: invalid namespace label (zstordb bug?)")
 )
 
+// Non-buggy client-specific errors
+var (
+	ErrCorruptedData = errors.New("zstor: data is corrupted")
+)
+
 var (
 	// DefaultJobCount is the default job count that is used
 	// for a data client, for those (iterator) methods,
