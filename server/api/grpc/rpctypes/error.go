@@ -17,7 +17,7 @@ var (
 	ErrGRPCNilLabel               = grpc.Errorf(codes.Unauthenticated, "zstordb: no label given")
 	ErrGRPCNilToken               = grpc.Errorf(codes.Unauthenticated, "zstordb: no JWT token given")
 	ErrGRPCUnimplemented          = grpc.Errorf(codes.Unimplemented, "zstordb: method support not implemented")
-	ErrGRPCPermissionDenied       = grpc.Errorf(codes.PermissionDenied, "zstordb: JWT tokens does not permit requested action")
+	ErrGRPCPermissionDenied       = grpc.Errorf(codes.PermissionDenied, "zstordb: JWT token does not permit requested action")
 )
 
 // string to server error mapping
@@ -37,17 +37,17 @@ var errStringToError = map[string]error{
 
 // client-side error
 var (
-	ErrNilKey                = Error(ErrGRPCNilKey)
-	ErrNilData               = Error(ErrGRPCNilData)
-	ErrNilRefList            = Error(ErrGRPCNilRefList)
-	ErrKeyNotFound           = Error(ErrGRPCKeyNotFound)
-	ErrDatabase              = Error(ErrGRPCDatabase)
-	ErrObjectDataCorrupted   = Error(ErrGRPCObjectDataCorrupted)
-	ErrRefListValueCorrupted = Error(ErrGRPCObjectRefListCorrupted)
-	ErrNilLabel              = Error(ErrGRPCNilLabel)
-	ErrNilToken              = Error(ErrGRPCNilToken)
-	ErrUnimplemented         = Error(ErrGRPCUnimplemented)
-	ErrPermissionDenied      = Error(ErrGRPCPermissionDenied)
+	ErrNilKey                 = Error(ErrGRPCNilKey)
+	ErrNilData                = Error(ErrGRPCNilData)
+	ErrNilRefList             = Error(ErrGRPCNilRefList)
+	ErrKeyNotFound            = Error(ErrGRPCKeyNotFound)
+	ErrDatabase               = Error(ErrGRPCDatabase)
+	ErrObjectDataCorrupted    = Error(ErrGRPCObjectDataCorrupted)
+	ErrObjectRefListCorrupted = Error(ErrGRPCObjectRefListCorrupted)
+	ErrNilLabel               = Error(ErrGRPCNilLabel)
+	ErrNilToken               = Error(ErrGRPCNilToken)
+	ErrUnimplemented          = Error(ErrGRPCUnimplemented)
+	ErrPermissionDenied       = Error(ErrGRPCPermissionDenied)
 )
 
 // ZStorError defines gRPC server errors.

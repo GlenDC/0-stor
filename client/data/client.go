@@ -48,7 +48,7 @@ type Client interface {
 	//
 	// rpctypes.ErrNilKey is returned in case no key was given.
 	// rpctypes.ErrObjectDataCorrupted is returned in case the stored data is corrupted.
-	// rpctypes.ErrRefListValueCorrupted is returned in case the stored refList is corrupted.
+	// rpctypes.ErrObjectRefListCorrupted is returned in case the stored refList is corrupted.
 	GetObject(key []byte) (*Object, error)
 
 	// DeleteObject deletes an object, using a given key.
@@ -95,7 +95,7 @@ type Client interface {
 	// rpctypes.ErrNilKey is returned in case no key was given.
 	// rpctypes.ErrKeyNotFound is returned in case no
 	// reference exists for that object.
-	// rpctypes.ErrRefListValueCorrupted is returned in case the stored refList is corrupted.
+	// rpctypes.ErrObjectRefListCorrupted is returned in case the stored refList is corrupted.
 	GetReferenceList(key []byte) ([]string, error)
 
 	// GetReferenceCount returns the reference count
@@ -103,7 +103,7 @@ type Client interface {
 	// the object is assumed to have 0 references.
 	//
 	// rpctypes.ErrNilKey is returned in case no key was given.
-	// rpctypes.ErrRefListValueCorrupted is returned in case the stored refList is corrupted.
+	// rpctypes.ErrObjectRefListCorrupted is returned in case the stored refList is corrupted.
 	GetReferenceCount(key []byte) (int64, error)
 
 	// AppendToReferenceList appends the given references
@@ -113,7 +113,7 @@ type Client interface {
 	//
 	// rpctypes.ErrNilKey is returned in case no key was given.
 	// rpctypes.ErrNilRefList is returned in case no ref list was given.
-	// rpctypes.ErrRefListValueCorrupted is returned in case the stored refList is corrupted.
+	// rpctypes.ErrObjectRefListCorrupted is returned in case the stored refList is corrupted.
 	AppendToReferenceList(key []byte, refList []string) error
 
 	// DeleteFromReferenceList removes the references of the given list,
@@ -126,7 +126,7 @@ type Client interface {
 	//
 	// rpctypes.ErrNilKey is returned in case no key was given.
 	// rpctypes.ErrNilRefList is returned in case no ref list was given.
-	// rpctypes.ErrRefListValueCorrupted is returned in case the stored refList is corrupted.
+	// rpctypes.ErrObjectRefListCorrupted is returned in case the stored refList is corrupted.
 	DeleteFromReferenceList(key []byte, refList []string) (int64, error)
 
 	// DeleteReferenceList deletes the stored reference list for the given (object) key.

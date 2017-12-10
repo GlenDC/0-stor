@@ -90,17 +90,19 @@ func getJWTMethod(grpcMethod string) (jwt.Method, error) {
 
 var (
 	_JWTObjectMethodsMap = map[string]jwt.Method{
-		"Get":                 jwt.MethodRead,
-		"List":                jwt.MethodRead,
-		"Exists":              jwt.MethodRead,
-		"Check":               jwt.MethodRead,
-		"Create":              jwt.MethodWrite,
-		"SetReferenceList":    jwt.MethodWrite,
-		"AppendReferenceList": jwt.MethodWrite,
-		"RemoveReferenceList": jwt.MethodWrite,
-		"Delete":              jwt.MethodDelete,
+		"GetObject":               jwt.MethodRead,
+		"GetObjectStatus":         jwt.MethodRead,
+		"ListObjectKeys":          jwt.MethodRead,
+		"GetReferenceList":        jwt.MethodRead,
+		"GetReferenceCount":       jwt.MethodRead,
+		"SetObject":               jwt.MethodWrite,
+		"SetReferenceList":        jwt.MethodWrite,
+		"AppendToReferenceList":   jwt.MethodWrite,
+		"DeleteObject":            jwt.MethodDelete,
+		"DeleteReferenceList":     jwt.MethodDelete,
+		"DeleteFromReferenceList": jwt.MethodDelete,
 	}
 	_JWTNamespaceMethodsMap = map[string]jwt.Method{
-		"Get": jwt.MethodAdmin,
+		"GetNamespace": jwt.MethodAdmin,
 	}
 )

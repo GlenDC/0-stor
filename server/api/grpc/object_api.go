@@ -41,6 +41,7 @@ func NewObjectAPI(db db.DB, jobs int) *ObjectAPI {
 func (api *ObjectAPI) SetObject(ctx context.Context, req *pb.SetObjectRequest) (*pb.SetObjectResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -87,6 +88,7 @@ func (api *ObjectAPI) SetObject(ctx context.Context, req *pb.SetObjectRequest) (
 func (api *ObjectAPI) GetObject(ctx context.Context, req *pb.GetObjectRequest) (*pb.GetObjectResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -102,7 +104,7 @@ func (api *ObjectAPI) GetObject(ctx context.Context, req *pb.GetObjectRequest) (
 		if err == db.ErrNotFound {
 			return nil, rpctypes.ErrGRPCKeyNotFound
 		}
-		log.Errorf("Database error for key %v: %v", dataKey, err)
+		log.Errorf("Database error for data (%v): %v", dataKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 	dataObject, err := encoding.DecodeObject(rawData)
@@ -120,7 +122,7 @@ func (api *ObjectAPI) GetObject(ctx context.Context, req *pb.GetObjectRequest) (
 				Data: dataObject.Data,
 			}, nil
 		}
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -141,6 +143,7 @@ func (api *ObjectAPI) GetObject(ctx context.Context, req *pb.GetObjectRequest) (
 func (api *ObjectAPI) DeleteObject(ctx context.Context, req *pb.DeleteObjectRequest) (*pb.DeleteObjectResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -153,7 +156,7 @@ func (api *ObjectAPI) DeleteObject(ctx context.Context, req *pb.DeleteObjectRequ
 	dataKey := db.DataKey([]byte(label), key)
 	err = api.db.Delete(dataKey)
 	if err != nil {
-		log.Errorf("Database error for key %v: %v", dataKey, err)
+		log.Errorf("Database error for data (%v): %v", dataKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -161,7 +164,7 @@ func (api *ObjectAPI) DeleteObject(ctx context.Context, req *pb.DeleteObjectRequ
 	refListKey := db.ReferenceListKey([]byte(label), key)
 	err = api.db.Delete(refListKey)
 	if err != nil {
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -173,13 +176,19 @@ func (api *ObjectAPI) DeleteObject(ctx context.Context, req *pb.DeleteObjectRequ
 func (api *ObjectAPI) GetObjectStatus(ctx context.Context, req *pb.GetObjectStatusRequest) (*pb.GetObjectStatusResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
 	key := req.GetKey()
+	if key == nil {
+		return nil, rpctypes.ErrGRPCNilKey
+	}
+
 	status, err := serverAPI.ObjectStatusForObject([]byte(label), key, api.db)
 	if err != nil {
-		return nil, err
+		log.Errorf("Database error for data (%v): %v", key, err)
+		return nil, rpctypes.ErrGRPCDatabase
 	}
 	return &pb.GetObjectStatusResponse{Status: convertStatus(status)}, nil
 
@@ -189,6 +198,7 @@ func (api *ObjectAPI) GetObjectStatus(ctx context.Context, req *pb.GetObjectStat
 func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.ObjectManager_ListObjectKeysServer) error {
 	label, err := extractStringFromContext(stream.Context(), rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return rpctypes.ErrGRPCNilLabel
 	}
 
@@ -200,7 +210,7 @@ func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.Ob
 
 	ch, err := api.db.ListItems(ctx, db.DataPrefix([]byte(label)))
 	if err != nil {
-		log.Errorf("Database error for key %v: %v", label, err)
+		log.Errorf("Database error for data (%v): %v", label, err)
 		return rpctypes.ErrGRPCDatabase
 	}
 
@@ -214,6 +224,10 @@ func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.Ob
 	// start the input goroutine,
 	// so it can start fetching keys ASAP
 	group.Go(func() error {
+		// only this goroutine sends to outputCh,
+		// so we can simply close it when we're done
+		defer close(outputCh)
+
 		// local variables reused for each iteration/item
 		var (
 			err  error
@@ -240,7 +254,7 @@ func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.Ob
 			// close current item
 			err = item.Close()
 			if err != nil {
-				log.Errorf("Database error for key %v: %v", label, err)
+				log.Errorf("Database error for data (%v): %v", label, err)
 				return rpctypes.ErrGRPCDatabase
 			}
 		}
@@ -254,8 +268,8 @@ func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.Ob
 	group.Go(func() error {
 		// local variables reused for each iteration/item
 		var (
-			resp            pb.ListObjectKeysResponse
-			workerStopCount int
+			resp pb.ListObjectKeysResponse
+			open bool
 		)
 
 		// loop while we can receive responses,
@@ -264,13 +278,9 @@ func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.Ob
 			select {
 			case <-ctx.Done():
 				return nil // early exist -> context is done
-			case resp = <-outputCh:
-				if resp.Key == nil {
-					workerStopCount++
-					if workerStopCount == api.jobCount {
-						return nil // we're done!
-					}
-					continue
+			case resp, open = <-outputCh:
+				if !open {
+					return nil // we're done!
 				}
 			}
 			err := stream.Send(&resp)
@@ -289,6 +299,7 @@ func (api *ObjectAPI) ListObjectKeys(req *pb.ListObjectKeysRequest, stream pb.Ob
 func (api *ObjectAPI) SetReferenceList(ctx context.Context, req *pb.SetReferenceListRequest) (*pb.SetReferenceListResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -322,6 +333,7 @@ func (api *ObjectAPI) SetReferenceList(ctx context.Context, req *pb.SetReference
 func (api *ObjectAPI) GetReferenceList(ctx context.Context, req *pb.GetReferenceListRequest) (*pb.GetReferenceListResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -334,10 +346,10 @@ func (api *ObjectAPI) GetReferenceList(ctx context.Context, req *pb.GetReference
 	refListData, err := api.db.Get(refListKey)
 	if err != nil {
 		if err == db.ErrNotFound {
-			return nil, rpctypes.ErrGRPCNilRefList
+			return nil, rpctypes.ErrGRPCKeyNotFound
 		}
 
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -355,6 +367,7 @@ func (api *ObjectAPI) GetReferenceList(ctx context.Context, req *pb.GetReference
 func (api *ObjectAPI) GetReferenceCount(ctx context.Context, req *pb.GetReferenceCountRequest) (*pb.GetReferenceCountResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -373,7 +386,7 @@ func (api *ObjectAPI) GetReferenceCount(ctx context.Context, req *pb.GetReferenc
 			}, nil
 		}
 
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -391,7 +404,8 @@ func (api *ObjectAPI) GetReferenceCount(ctx context.Context, req *pb.GetReferenc
 func (api *ObjectAPI) AppendToReferenceList(ctx context.Context, req *pb.AppendToReferenceListRequest) (*pb.AppendToReferenceListResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
-		return nil, rpctypes.ErrNilLabel
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
+		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
 	// get parameters and ensure they're given
@@ -426,7 +440,7 @@ func (api *ObjectAPI) AppendToReferenceList(ctx context.Context, req *pb.AppendT
 		if err == encoding.ErrInvalidChecksum || err == encoding.ErrInvalidData {
 			return nil, rpctypes.ErrGRPCObjectRefListCorrupted
 		}
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -437,6 +451,7 @@ func (api *ObjectAPI) AppendToReferenceList(ctx context.Context, req *pb.AppendT
 func (api *ObjectAPI) DeleteFromReferenceList(ctx context.Context, req *pb.DeleteFromReferenceListRequest) (*pb.DeleteFromReferenceListResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
 		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
@@ -475,7 +490,7 @@ func (api *ObjectAPI) DeleteFromReferenceList(ctx context.Context, req *pb.Delet
 		if err == encoding.ErrInvalidChecksum || err == encoding.ErrInvalidData {
 			return nil, rpctypes.ErrGRPCObjectRefListCorrupted
 		}
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 
@@ -488,7 +503,8 @@ func (api *ObjectAPI) DeleteFromReferenceList(ctx context.Context, req *pb.Delet
 func (api *ObjectAPI) DeleteReferenceList(ctx context.Context, req *pb.DeleteReferenceListRequest) (*pb.DeleteReferenceListResponse, error) {
 	label, err := extractStringFromContext(ctx, rpctypes.MetaLabelKey)
 	if err != nil {
-		return nil, unauthenticatedError(err)
+		log.Errorf("error while extracting label from GRPC metadata: %v", err)
+		return nil, rpctypes.ErrGRPCNilLabel
 	}
 
 	// get key parameter and ensure it's given
@@ -501,7 +517,7 @@ func (api *ObjectAPI) DeleteReferenceList(ctx context.Context, req *pb.DeleteRef
 	refListKey := db.ReferenceListKey([]byte(label), key)
 	err = api.db.Delete(refListKey)
 	if err != nil {
-		log.Errorf("Database error for key %v: %v", refListKey, err)
+		log.Errorf("Database error for refList (%v): %v", refListKey, err)
 		return nil, rpctypes.ErrGRPCDatabase
 	}
 

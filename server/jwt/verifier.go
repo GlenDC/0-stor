@@ -165,7 +165,7 @@ func (v *Verifier) extractJWTToken(ctx context.Context) (string, error) {
 		return "", ErrNoJWTToken
 	}
 
-	token, ok := md[rpctypes.MetaLabelKey]
+	token, ok := md[rpctypes.MetaAuthKey]
 	if !ok || len(token) < 1 {
 		return "", ErrNoJWTToken
 	}

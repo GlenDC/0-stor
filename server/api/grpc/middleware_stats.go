@@ -74,17 +74,19 @@ type labelStatsFunc func(label string)
 
 var (
 	_StatsObjectMethodsMap = map[string]labelStatsFunc{
-		"Get":                 stats.IncrRead,
-		"List":                stats.IncrRead,
-		"Exists":              stats.IncrRead,
-		"Check":               stats.IncrRead,
-		"Create":              stats.IncrWrite,
-		"SetReferenceList":    stats.IncrWrite,
-		"AppendReferenceList": stats.IncrWrite,
-		"RemoveReferenceList": stats.IncrWrite,
-		"Delete":              stats.IncrWrite,
+		"GetObject":               stats.IncrRead,
+		"GetObjectStatus":         stats.IncrRead,
+		"ListObjectKeys":          stats.IncrRead,
+		"GetReferenceList":        stats.IncrRead,
+		"GetReferenceCount":       stats.IncrRead,
+		"SetObject":               stats.IncrWrite,
+		"SetReferenceList":        stats.IncrWrite,
+		"AppendToReferenceList":   stats.IncrWrite,
+		"DeleteObject":            stats.IncrWrite,
+		"DeleteReferenceList":     stats.IncrWrite,
+		"DeleteFromReferenceList": stats.IncrWrite,
 	}
 	_StatsNamespaceMethodsMap = map[string]labelStatsFunc{
-		"Get": stats.IncrRead,
+		"GetNamespace": stats.IncrRead,
 	}
 )
