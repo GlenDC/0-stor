@@ -20,7 +20,7 @@ func TestRandomStorageReadWrite_InMemory(t *testing.T) {
 	storage := NewRandomStorage(cluster)
 	require.NotNil(t, storage)
 
-	testStorageReadWrite(t, storage)
+	testStorageReadWrite(t, storage, cluster)
 }
 
 func TestRandomStorageReadWrite_GRPC(t *testing.T) {
@@ -31,7 +31,7 @@ func TestRandomStorageReadWrite_GRPC(t *testing.T) {
 	storage := NewRandomStorage(cluster)
 	require.NotNil(t, storage)
 
-	testStorageReadWrite(t, storage)
+	testStorageReadWrite(t, storage, cluster)
 }
 
 func TestRandomStorageRepair(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testStorageReadWrite(t *testing.T, storage Storage) {
+func testStorageReadWrite(t *testing.T, storage Storage, cluster datastor.Cluster) {
 	require.NotNil(t, storage)
 
 	t.Run("fixed test cases", func(t *testing.T) {
@@ -42,11 +42,25 @@ func testStorageReadWrite(t *testing.T, storage Storage) {
 			},
 		}
 		for _, inputObject := range objects {
+			// write object & validate
 			cfg, err := storage.Write(inputObject)
 			require.NoError(err)
 			require.Equal(inputObject.Key, cfg.Key)
 			require.Equal(len(inputObject.Data), cfg.DataSize)
 
+			// validate that all shards contain valid data
+			for _, shardID := range cfg.Shards {
+				shard, err := cluster.GetShard(shardID)
+				require.NoError(err)
+				require.Equal(shardID, shard.Identifier())
+
+				status, err := shard.GetObjectStatus(cfg.Key)
+				require.NoError(err)
+				require.Equalf(datastor.ObjectStatusOK.String(), status.String(),
+					"key %q NotFound/Corrupt", cfg.Key)
+			}
+
+			// read object & validate
 			outputObject, err := storage.Read(cfg)
 			require.NoError(err)
 			require.Equal(inputObject, outputObject)
@@ -74,11 +88,25 @@ func testStorageReadWrite(t *testing.T, storage Storage) {
 				ReferenceList: refList,
 			}
 
+			// write object & validate
 			cfg, err := storage.Write(inputObject)
 			require.NoError(err)
 			require.Equal(inputObject.Key, cfg.Key)
 			require.Equal(len(data), cfg.DataSize)
 
+			// validate that all shards contain valid data
+			for _, shardID := range cfg.Shards {
+				shard, err := cluster.GetShard(shardID)
+				require.NoError(err)
+				require.Equal(shardID, shard.Identifier())
+
+				status, err := shard.GetObjectStatus(cfg.Key)
+				require.NoError(err)
+				require.Equalf(datastor.ObjectStatusOK.String(), status.String(),
+					"key %q NotFound/Corrupt", cfg.Key)
+			}
+
+			// read object & validate
 			outputObject, err := storage.Read(cfg)
 			require.NoError(err)
 			require.Equal(inputObject, outputObject)

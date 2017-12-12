@@ -24,7 +24,7 @@ func TestReplicationStorageReadWrite_InMemory(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 1, 0)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=2,jobCount=D", func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestReplicationStorageReadWrite_InMemory(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 2, 0)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=2,jobCount=1", func(t *testing.T) {
@@ -44,7 +44,7 @@ func TestReplicationStorageReadWrite_InMemory(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 2, 1)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=16,jobCount=D", func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestReplicationStorageReadWrite_InMemory(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 16, 0)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=16,jobCount=1", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestReplicationStorageReadWrite_InMemory(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 16, 1)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 }
 
@@ -87,7 +87,7 @@ func TestReplicationStorageReadWrite_GRPC(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 1, 0)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=2,jobCount=D", func(t *testing.T) {
@@ -98,7 +98,7 @@ func TestReplicationStorageReadWrite_GRPC(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 2, 0)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=2,jobCount=1", func(t *testing.T) {
@@ -109,7 +109,7 @@ func TestReplicationStorageReadWrite_GRPC(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 2, 1)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=16,jobCount=D", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestReplicationStorageReadWrite_GRPC(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 16, 0)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 
 	t.Run("replicationNr=16,jobCount=1", func(t *testing.T) {
@@ -131,7 +131,7 @@ func TestReplicationStorageReadWrite_GRPC(t *testing.T) {
 		storage := NewReplicatedStorage(cluster, 16, 1)
 		require.NotNil(t, storage)
 
-		testStorageReadWrite(t, storage)
+		testStorageReadWrite(t, storage, cluster)
 	})
 }
 
