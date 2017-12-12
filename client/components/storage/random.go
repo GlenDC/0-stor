@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/lunny/log"
+	log "github.com/Sirupsen/logrus"
 	"github.com/zero-os/0-stor/client/datastor"
 )
 
@@ -37,8 +37,9 @@ func (rs *RandomStorage) Write(object datastor.Object) (StorageConfig, error) {
 		err = shard.SetObject(object)
 		if err == nil {
 			return StorageConfig{
-				Key:    object.Key,
-				Shards: []string{shard.Identifier()},
+				Key:      object.Key,
+				Shards:   []string{shard.Identifier()},
+				DataSize: len(object.Data),
 			}, nil
 		}
 		log.Errorf("failed to write %q to random shard %q: %v",
@@ -61,6 +62,10 @@ func (rs *RandomStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 	object, err := shard.GetObject(cfg.Key)
 	if err != nil {
 		return datastor.Object{}, err
+	}
+
+	if len(object.Data) != cfg.DataSize {
+		return *object, ErrInvalidDataSize
 	}
 	return *object, nil
 }

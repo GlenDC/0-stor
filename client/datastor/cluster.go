@@ -152,7 +152,7 @@ func (it *LazyShardIterator) Next() bool {
 		shard = it.shards[it.curIndex]
 		it.curShard, err = it.cluster.GetShard(shard)
 		if err == nil {
-			return false
+			return true
 		}
 		log.Errorf("LazyShardIterator: error while getting shard %q: %v", shard, err)
 	}

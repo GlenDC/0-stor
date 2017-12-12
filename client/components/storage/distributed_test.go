@@ -18,17 +18,23 @@ func TestReedSolomonEncoderDecoderPanics(t *testing.T) {
 	require.Panics(func() {
 		NewReedSolomonEncoderDecoder(1, 0)
 	}, "m is too small")
+}
 
-	require.Panics(func() {
+func TestReedSolomonEncoderDecoderErrors(t *testing.T) {
+	require := require.New(t)
+
+	require.Error(func() error {
 		ed, err := NewReedSolomonEncoderDecoder(1, 1)
 		require.NoError(err)
-		ed.Encode(nil)
-	}, "cannot encode nil-data")
-	require.Panics(func() {
+		_, err = ed.Encode(nil)
+		return err
+	}(), "cannot encode nil-data")
+	require.Error(func() error {
 		ed, err := NewReedSolomonEncoderDecoder(1, 1)
 		require.NoError(err)
-		ed.Decode(nil, 1)
-	}, "cannot decode 0 parts")
+		_, err = ed.Decode(nil, 1)
+		return err
+	}(), "cannot decode 0 parts")
 }
 
 func TestReedSolomonEncoderDecoder(t *testing.T) {
@@ -85,6 +91,7 @@ func testReedSolomonEncoderDecoderAsyncUsage(t *testing.T, k, m, jobCount int) {
 	ed, err := NewReedSolomonEncoderDecoder(k, m)
 	require.NoError(t, err)
 	require.NotNil(t, ed)
+	require.Equal(t, k, ed.DataShardCount())
 
 	var wg sync.WaitGroup
 	wg.Add(jobCount)
@@ -116,6 +123,7 @@ func testReedSolomonEncoderDecoder(t *testing.T, k, m int) {
 	ed, err := NewReedSolomonEncoderDecoder(k, m)
 	require.NoError(err)
 	require.NotNil(ed)
+	require.Equal(k, ed.DataShardCount())
 
 	testCases := []string{
 		"a",

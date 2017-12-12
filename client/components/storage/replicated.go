@@ -198,6 +198,9 @@ func (rs *ReplicatedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 		shard = it.Shard()
 		object, err = shard.GetObject(cfg.Key)
 		if err == nil {
+			if len(object.Data) != cfg.DataSize {
+				return *object, ErrInvalidDataSize
+			}
 			return *object, nil
 		}
 		log.Errorf("failed to read %q from replicated shard %q: %v",

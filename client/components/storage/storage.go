@@ -22,6 +22,7 @@ var (
 	ErrUnexpectedShardsCount = errors.New("unexpected shards count")
 	ErrShardsUnavailable     = errors.New("(too many?) shards are unavailable")
 	ErrNotSupported          = errors.New("method is not supported")
+	ErrInvalidDataSize       = errors.New("returned object has invalid data size")
 )
 
 type Storage interface {
