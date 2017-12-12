@@ -72,12 +72,12 @@ func testStorageReadWrite(t *testing.T, storage Storage, cluster datastor.Cluste
 
 		for i := 0; i < 256; i++ {
 			key := []byte(fmt.Sprintf("key#%d", i+1))
-			data := make([]byte, mathRand.Int31n(4096)+1)
+			data := make([]byte, mathRand.Int31n(128)+1)
 			rand.Read(data)
 
-			refList := make([]string, mathRand.Int31n(16)+1)
+			refList := make([]string, mathRand.Int31n(8)+1)
 			for i := range refList {
-				id := make([]byte, mathRand.Int31n(128)+1)
+				id := make([]byte, mathRand.Int31n(32)+1)
 				rand.Read(id)
 				refList[i] = string(id)
 			}

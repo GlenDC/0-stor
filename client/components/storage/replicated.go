@@ -180,7 +180,7 @@ func (rs *ReplicatedStorage) Write(object datastor.Object) (StorageConfig, error
 // Read implements storage.Storage.Read
 func (rs *ReplicatedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 	// ensure that plenty of shards are available
-	if len(cfg.Shards) < 1 {
+	if len(cfg.Shards) < rs.replicationNr {
 		return datastor.Object{}, ErrUnexpectedShardsCount
 	}
 

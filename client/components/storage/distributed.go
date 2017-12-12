@@ -80,12 +80,19 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 
 	// sends each part to an available worker goroutine,
 	// which tries to store it in a random shard.
-	inputCh := make(chan []byte, jobCount)
+	// however make sure that we store the shard list,
+	// in the same order as how we received the different parts,
+	// otherwise we might not be able to decode it once again.
+	type indexedPart struct {
+		Index int
+		Data  []byte
+	}
+	inputCh := make(chan indexedPart, jobCount)
 	group.Go(func() error {
 		defer close(inputCh) // closes itself
-		for _, part := range parts {
+		for index, part := range parts {
 			select {
-			case inputCh <- part:
+			case inputCh <- indexedPart{index, part}:
 			case <-ctx.Done():
 				return nil
 			}
@@ -101,12 +108,16 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 	// write all the different parts to their own separate shard,
 	// and return the identifiers of the used shards over the resultCh,
 	// which will be used to collect all the successfull shards' identifiers for the final output
-	resultCh := make(chan string, jobCount)
+	type indexedShard struct {
+		Index      int
+		Identifier string
+	}
+	resultCh := make(chan indexedShard, jobCount)
 	// create all the actual workers
 	for i := 0; i < jobCount; i++ {
 		group.Go(func() error {
 			var (
-				part  []byte
+				part  indexedPart
 				open  bool
 				err   error
 				shard datastor.Shard
@@ -145,12 +156,12 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 					// do the actual storage
 					err = shard.SetObject(datastor.Object{
 						Key:           object.Key,
-						Data:          part,
+						Data:          part.Data,
 						ReferenceList: object.ReferenceList,
 					})
 					if err == nil {
 						select {
-						case resultCh <- shard.Identifier():
+						case resultCh <- indexedShard{part.Index, shard.Identifier()}:
 							break writeLoop
 						case <-ctx.Done():
 							return errors.New("context was unexpectedly cancelled, " +
@@ -178,16 +189,21 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 		close(resultCh)
 	}()
 
-	// collect the identifiers of all shards, we could write our object to
-	shards := make([]string, 0, partsCount)
+	// collect the identifiers of all shards we could write our object to,
+	// and store+send them in the same order as how we received the parts
+	var (
+		resultCount int
+		shards      = make([]string, partsCount)
+	)
 	// fetch all results
-	for id := range resultCh {
-		shards = append(shards, id)
+	for result := range resultCh {
+		shards[result.Index] = result.Identifier
+		resultCount++
 	}
 
-	cfg := StorageConfig{Key: object.Key, Shards: shards}
+	cfg := StorageConfig{Key: object.Key, Shards: shards, DataSize: len(object.Data)}
 	// check if we have sufficient distributions
-	if len(shards) < partsCount {
+	if resultCount < partsCount {
 		return cfg, ErrInsufficientShards
 	}
 	return cfg, nil
@@ -195,7 +211,156 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 
 // Read implements storage.Storage.Read
 func (ds *DistributedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
-	panic("TODO")
+	// validate the input shard count
+	shardCount := len(cfg.Shards)
+	if shardCount < 2 { // min shard count (k+m, where both values are 1)
+		return datastor.Object{}, ErrUnexpectedShardsCount
+	}
+
+	// define the jobCount
+	jobCount := ds.jobCount
+	if jobCount > shardCount {
+		jobCount = shardCount
+	}
+
+	// create our sync-purpose variables
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	group, ctx := errgroup.WithContext(ctx)
+
+	// create a channel-based iterator, to fetch the shards,
+	// in sequence as given, and thread-save,
+	// also attach the index to each shard, such that
+	// we can deliver the parts in the correct order
+	type indexedShard struct {
+		Index int
+		Shard datastor.Shard
+	}
+	shardCh := make(chan indexedShard, jobCount)
+	go func() {
+		defer close(shardCh)
+
+		var (
+			index int
+			it    = datastor.NewLazyShardIterator(ds.cluster, cfg.Shards)
+		)
+		for it.Next() {
+			select {
+			case shardCh <- indexedShard{index, it.Shard()}:
+				index++
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	type readResult struct {
+		Index         int
+		Data          []byte
+		ReferenceList []string
+	}
+
+	// read all the needed parts,
+	// from the available datashards
+	resultCh := make(chan readResult, jobCount)
+	// create all the actual workers
+	for i := 0; i < jobCount; i++ {
+		group.Go(func() error {
+			var (
+				open   bool
+				object *datastor.Object
+				err    error
+				shard  indexedShard
+			)
+			for {
+				// fetch a random shard,
+				// it's an error if this is not possible,
+				// as a shard is expected to be still available at this stage
+				select {
+				case shard, open = <-shardCh:
+					if !open {
+						return nil
+					}
+				case <-ctx.Done():
+					return nil
+				}
+
+				// fetch the data part
+				object, err = shard.Shard.GetObject(cfg.Key)
+				if err != nil {
+					// casually log the shard-read error,
+					// and continue trying with another shard...
+					log.Errorf("failed to read %q from given shard %q: %v",
+						cfg.Key, shard.Shard.Identifier(), err)
+					continue // try another shard
+				}
+				result := readResult{
+					Index:         shard.Index,
+					Data:          object.Data,
+					ReferenceList: object.ReferenceList,
+				}
+				select {
+				case resultCh <- result:
+				case <-ctx.Done():
+					return errors.New("context was unexpectedly cancelled, " +
+						"while returning the data part, freshly fetched from a shard for a distribute-read request")
+				}
+			}
+		})
+	}
+
+	// close the result channel,
+	// when all grouped goroutines are finished, so it can be used as an iterator
+	go func() {
+		err := group.Wait()
+		if err != nil {
+			log.Errorf("distribute-read %q has failed due to an error: %v",
+				cfg.Key, err)
+		}
+		close(resultCh)
+	}()
+
+	// collect all the different distributed parts
+	var (
+		referenceList []string
+		resultCount   int
+
+		parts = make([][]byte, shardCount)
+	)
+
+	for result := range resultCh {
+		// put the part in the correct slot
+		parts[result.Index] = result.Data
+		resultCount++
+
+		// if the referenceList wasn't set yet, do so now
+		if referenceList == nil {
+			referenceList = result.ReferenceList
+			continue
+		}
+		// TODO: Validate ReferenceList somehow?! Store ReferenceList better?!
+	}
+
+	// ensure that we have received all the different parts
+	if resultCount < shardCount {
+		return datastor.Object{}, ErrShardsUnavailable
+	}
+
+	// decode the distributed data
+	data, err := ds.dec.Decode(parts, cfg.DataSize)
+	if err != nil {
+		return datastor.Object{}, err
+	}
+	if len(data) != cfg.DataSize {
+		return datastor.Object{}, ErrInvalidDataSize
+	}
+
+	// return decoded object
+	return datastor.Object{
+		Key:           cfg.Key,
+		Data:          data,
+		ReferenceList: referenceList,
+	}, nil
 }
 
 // Repair implements storage.Storage.Repair
@@ -217,13 +382,6 @@ type DistributedEncoderDecoder interface {
 	// Decode the different parts back into the original data slice,
 	// as it was given in the original Encode call.
 	Decode(parts [][]byte, dataSize int) (data []byte, err error)
-
-	// DataShardCount returns the (minimum) amount of data shards,
-	// required to fetch data from, in order to be able to decode the encoded data.
-	//
-	// The implementation can return `-1` in case this feature is not supported,
-	// in which case it will fetch data from as much shards as there are given.
-	DataShardCount() int
 }
 
 // NewReedSolomonEncoderDecoder creates a new ReedSolomonEncoderDecoder.
@@ -298,11 +456,6 @@ func (rs *ReedSolomonEncoderDecoder) Decode(parts [][]byte, dataSize int) ([]byt
 		}
 	}
 	return data, nil
-}
-
-// DataShardCount implements DistributedEncoderDecoder.DataShardCount
-func (rs *ReedSolomonEncoderDecoder) DataShardCount() int {
-	return rs.k
 }
 
 func (rs *ReedSolomonEncoderDecoder) splitData(data []byte) [][]byte {

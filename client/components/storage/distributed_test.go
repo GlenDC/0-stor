@@ -7,7 +7,216 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zero-os/0-stor/client/datastor/memory"
 )
+
+func TestNewDistributedStoragePanics(t *testing.T) {
+	require.Panics(t, func() {
+		NewDistributedStorage(nil, 1, 1, -1)
+	}, "no cluster given given")
+	require.Panics(t, func() {
+		NewDistributedStorage(memory.NewCluster(nil), 0, 1, -1)
+	}, "no valid k (data shard count) given")
+	require.Panics(t, func() {
+		NewDistributedStorage(memory.NewCluster(nil), 1, 0, -1)
+	}, "no valid m (parity shard count) given")
+}
+
+func TestDistributedStorageReadWrite_InMemory(t *testing.T) {
+	t.Run("k=1,m=1,jobCount=D", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{"a", "b", "c", "d"})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 1, 1, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=2,m=1,jobCount=D", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{"a", "b", "c", "d", "e", "f"})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 2, 1, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=1,m=2,jobCount=D", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{"a", "b", "c", "d", "e", "f"})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 1, 2, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=2,m=2,jobCount=1", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{"a", "b", "c", "d", "e", "f", "g", "h"})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 2, 2, 1)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=8,m=8,jobCount=D", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{
+			"a", "b", "c", "d", "e", "f", "g", "h",
+			"i", "j", "k", "l", "m", "n", "i", "o",
+			"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah",
+			"ai", "aj", "ak", "al", "am", "an", "ai", "ao",
+		})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 8, 8, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=4,m=8,jobCount=D", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{
+			"a", "b", "c", "d", "e", "f", "g", "h",
+			"i", "j", "k", "l", "m", "n", "i", "o",
+			"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah",
+			"ai", "aj", "ak", "al", "am", "an", "ai", "ao",
+		})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 4, 8, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=8,m=4,jobCount=D", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{
+			"a", "b", "c", "d", "e", "f", "g", "h",
+			"i", "j", "k", "l", "m", "n", "i", "o",
+			"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah",
+			"ai", "aj", "ak", "al", "am", "an", "ai", "ao",
+		})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 8, 4, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=8,m=8,jobCount=1", func(t *testing.T) {
+		cluster := memory.NewCluster([]string{
+			"a", "b", "c", "d", "e", "f", "g", "h",
+			"i", "j", "k", "l", "m", "n", "i", "o",
+			"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah",
+			"ai", "aj", "ak", "al", "am", "an", "ai", "ao",
+		})
+		require.NotNil(t, cluster)
+
+		storage, err := NewDistributedStorage(cluster, 8, 8, 1)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+}
+
+func TestDistributedStorageReadWrite_GRPC(t *testing.T) {
+	t.Run("k=1,m=1,jobCount=D", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(4)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 1, 1, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=2,m=1,jobCount=D", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(6)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 2, 1, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=1,m=2,jobCount=D", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(6)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 1, 2, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=2,m=2,jobCount=1", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(8)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 2, 2, 1)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=8,m=8,jobCount=D", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(16)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 8, 8, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=4,m=8,jobCount=D", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(16)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 4, 8, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=8,m=4,jobCount=D", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(16)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 8, 4, 0)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+
+	t.Run("k=8,m=8,jobCount=1", func(t *testing.T) {
+		cluster, cleanup, err := newGRPCServerCluster(16)
+		require.NoError(t, err)
+		defer cleanup()
+
+		storage, err := NewDistributedStorage(cluster, 8, 8, 1)
+		require.NoError(t, err)
+
+		testStorageReadWrite(t, storage, cluster)
+	})
+}
+
+func TestDistributedStorageRepair(t *testing.T) {
+	// TODO
+}
 
 func TestReedSolomonEncoderDecoderPanics(t *testing.T) {
 	require := require.New(t)
@@ -91,7 +300,6 @@ func testReedSolomonEncoderDecoderAsyncUsage(t *testing.T, k, m, jobCount int) {
 	ed, err := NewReedSolomonEncoderDecoder(k, m)
 	require.NoError(t, err)
 	require.NotNil(t, ed)
-	require.Equal(t, k, ed.DataShardCount())
 
 	var wg sync.WaitGroup
 	wg.Add(jobCount)
@@ -123,7 +331,6 @@ func testReedSolomonEncoderDecoder(t *testing.T, k, m int) {
 	ed, err := NewReedSolomonEncoderDecoder(k, m)
 	require.NoError(err)
 	require.NotNil(ed)
-	require.Equal(k, ed.DataShardCount())
 
 	testCases := []string{
 		"a",
