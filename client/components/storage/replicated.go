@@ -169,7 +169,7 @@ func (rs *ReplicatedStorage) Write(object datastor.Object) (StorageConfig, error
 		shards = append(shards, id)
 	}
 
-	cfg := StorageConfig{Key: object.Key, Shards: shards}
+	cfg := StorageConfig{Key: object.Key, Shards: shards, DataSize: len(object.Data)}
 	// check if we have sufficient replications
 	if len(shards) < rs.replicationNr {
 		return cfg, ErrInsufficientShards
@@ -198,13 +198,15 @@ func (rs *ReplicatedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 		shard = it.Shard()
 		object, err = shard.GetObject(cfg.Key)
 		if err == nil {
-			if len(object.Data) != cfg.DataSize {
-				return *object, ErrInvalidDataSize
+			if len(object.Data) == cfg.DataSize {
+				return *object, nil
 			}
-			return *object, nil
+			log.Errorf("failed to read %q from replicated shard %q: invalid data size",
+				cfg.Key, shard.Identifier())
+		} else {
+			log.Errorf("failed to read %q from replicated shard %q: %v",
+				cfg.Key, shard.Identifier(), err)
 		}
-		log.Errorf("failed to read %q from replicated shard %q: %v",
-			cfg.Key, shard.Identifier(), err)
 	}
 
 	// sadly, no shard was available

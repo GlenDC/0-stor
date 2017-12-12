@@ -2,8 +2,13 @@ package memory
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
+	mathRand "math/rand"
 	"testing"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/stretchr/testify/require"
 	"github.com/zero-os/0-stor/client/datastor"
@@ -56,6 +61,82 @@ func TestClientSetGetObject(t *testing.T) {
 	require.Equal([]byte("foo"), obj.Key)
 	require.Equal([]byte("bar"), obj.Data)
 	require.Empty(obj.ReferenceList)
+}
+
+func TestClientSetGetObjectAsync(t *testing.T) {
+	require := require.New(t)
+
+	client := NewClient()
+	defer func() {
+		err := client.Close()
+		require.NoError(err)
+	}()
+
+	group, ctx := errgroup.WithContext(context.Background())
+
+	const jobs = 4096
+
+	ch := make(chan datastor.Object, jobs)
+
+	for i := 0; i < jobs; i++ {
+		i := i
+		group.Go(func() error {
+			key := []byte(fmt.Sprintf("key#%d", i+1))
+			data := make([]byte, mathRand.Int31n(4096)+1)
+			rand.Read(data)
+
+			refList := make([]string, mathRand.Int31n(16)+1)
+			for i := range refList {
+				id := make([]byte, mathRand.Int31n(128)+1)
+				rand.Read(id)
+				refList[i] = string(id)
+			}
+
+			object := datastor.Object{
+				Key:           key,
+				Data:          data,
+				ReferenceList: refList,
+			}
+
+			err := client.SetObject(object)
+			if err != nil {
+				return fmt.Errorf("set error for key %q: %v", object.Key, err)
+			}
+
+			select {
+			case ch <- object:
+			case <-ctx.Done():
+			}
+
+			return nil
+		})
+
+		group.Go(func() error {
+			var object datastor.Object
+			select {
+			case object = <-ch:
+			case <-ctx.Done():
+				return nil
+			}
+
+			outputObject, err := client.GetObject(object.Key)
+			if err != nil {
+				return fmt.Errorf("get error for key %q: %v", object.Key, err)
+			}
+
+			require.NotNil(outputObject)
+			require.Equal(object.Key, outputObject.Key)
+			require.Len(outputObject.Data, len(object.Data))
+			require.Equal(outputObject.Data, object.Data)
+			require.Len(outputObject.ReferenceList, len(object.ReferenceList))
+			require.Equal(outputObject.ReferenceList, object.ReferenceList)
+
+			return nil
+		})
+	}
+
+	err := group.Wait()
+	require.NoError(err)
 }
 
 func TestClientSetDeleteGetObject(t *testing.T) {

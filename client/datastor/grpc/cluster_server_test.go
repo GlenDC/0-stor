@@ -1,4 +1,4 @@
-package memory
+package grpc
 
 import (
 	"context"
@@ -7,98 +7,58 @@ import (
 	mathRand "math/rand"
 	"testing"
 
-	"golang.org/x/sync/errgroup"
-
-	"github.com/zero-os/0-stor/client/datastor"
-
 	"github.com/stretchr/testify/require"
+	"github.com/zero-os/0-stor/client/datastor"
+	"golang.org/x/sync/errgroup"
 )
-
-func TestShard(t *testing.T) {
-	shard := new(Shard)
-	require.Empty(t, shard.Identifier())
-	shard.id = "foo"
-	require.Equal(t, "foo", shard.Identifier())
-}
 
 func TestGetShard(t *testing.T) {
 	require := require.New(t)
 
-	cluster := NewCluster(nil)
-	require.NotNil(cluster)
-	defer func() {
-		err := cluster.Close()
-		require.NoError(err)
-	}()
+	cluster, clusterCleanup, err := newServerCluster(1)
+	require.NoError(err)
+	defer clusterCleanup()
 
-	shard, err := cluster.GetRandomShard()
-	require.Equal(datastor.ErrNoShardsAvailable, err)
-	require.Nil(shard)
+	_, addr, clientCleanup, err := newServerClient()
+	require.NoError(err)
+	defer clientCleanup()
 
-	shard, err = cluster.GetShard("42")
+	shard, err := cluster.GetShard(addr)
 	require.NoError(err)
 	require.NotNil(shard)
-	require.Equal("42", shard.Identifier())
+	require.Equal(addr, shard.Identifier())
 
-	shard, err = cluster.GetShard("42")
+	shard, err = cluster.GetShard(addr)
 	require.NoError(err)
 	require.NotNil(shard)
-	require.Equal("42", shard.Identifier())
+	require.Equal(addr, shard.Identifier())
 
-	cluster = NewCluster([]string{"ab"})
-	require.NotNil(cluster)
-
-	shard, err = cluster.GetShard("ab")
+	shard, err = cluster.GetShard(cluster.listedSlice[0].address)
 	require.NoError(err)
 	require.NotNil(shard)
-	require.Equal("ab", shard.Identifier())
+	require.Equal(cluster.listedSlice[0].address, shard.Identifier())
 }
 
-func TestGetRandomShards_NoListedShards(t *testing.T) {
+func TestGetRandomShards(t *testing.T) {
 	require := require.New(t)
 
-	cluster := NewCluster(nil)
-	require.NotNil(cluster)
-	defer func() {
-		err := cluster.Close()
-		require.NoError(err)
-	}()
-
-	shard, err := cluster.GetRandomShard()
-	require.Equal(datastor.ErrNoShardsAvailable, err)
-	require.Nil(shard)
-
-	it := cluster.GetRandomShardIterator(nil)
-	require.NotNil(it)
-	require.False(it.Next())
-	require.Panics(func() {
-		it.Shard()
-	}, "invalid iterator")
-
-	it = cluster.GetRandomShardIterator([]string{"foo"})
-	require.NotNil(it)
-	require.False(it.Next())
-	require.Panics(func() {
-		it.Shard()
-	}, "invalid iterator")
-}
-
-func TestGetRandomShards_WithListedShards(t *testing.T) {
-	require := require.New(t)
-
-	cluster := NewCluster([]string{"a", "b", "c"})
-	require.NotNil(cluster)
-	defer func() {
-		err := cluster.Close()
-		require.NoError(err)
-	}()
-
-	shard, err := cluster.GetRandomShard()
+	cluster, clusterCleanup, err := newServerCluster(3)
 	require.NoError(err)
-	require.NotNil(shard)
-	id := shard.Identifier()
-	require.NotEmpty(id)
-	require.True(id == "a" || id == "b" || id == "c")
+	defer clusterCleanup()
+
+	var ids []string
+	for _, shard := range cluster.listedSlice {
+		ids = append(ids, shard.Identifier())
+	}
+
+	for i := 0; i < 32; i++ {
+		shard, err := cluster.GetRandomShard()
+		require.NoError(err)
+		require.NotNil(shard)
+		id := shard.Identifier()
+		require.NotEmpty(id)
+		require.True(id == ids[0] || id == ids[1] || id == ids[2])
+	}
 
 	it := cluster.GetRandomShardIterator(nil)
 	require.NotNil(it)
@@ -108,9 +68,9 @@ func TestGetRandomShards_WithListedShards(t *testing.T) {
 	}, "invalid iterator, need to call Next First")
 
 	keys := map[string]struct{}{
-		"a": struct{}{},
-		"b": struct{}{},
-		"c": struct{}{},
+		ids[0]: struct{}{},
+		ids[1]: struct{}{},
+		ids[2]: struct{}{},
 	}
 	for it.Next() {
 		shard := it.Shard()
@@ -124,12 +84,12 @@ func TestGetRandomShards_WithListedShards(t *testing.T) {
 	}
 	require.Empty(keys)
 
-	it = cluster.GetRandomShardIterator([]string{"b"})
+	it = cluster.GetRandomShardIterator([]string{ids[1]})
 	require.NotNil(it)
 
 	keys = map[string]struct{}{
-		"a": struct{}{},
-		"c": struct{}{},
+		ids[0]: struct{}{},
+		ids[2]: struct{}{},
 	}
 	for it.Next() {
 		shard := it.Shard()
@@ -147,18 +107,11 @@ func TestGetRandomShards_WithListedShards(t *testing.T) {
 func TestGetRandomShardAsync(t *testing.T) {
 	require := require.New(t)
 
-	const jobs = 4096
+	const jobs = 128
 
-	var shards []string
-	for i := 0; i < jobs; i++ {
-		shards = append(shards, fmt.Sprintf("shard#%d", i+1))
-	}
-	cluster := NewCluster(shards)
-	require.NotNil(cluster)
-	defer func() {
-		err := cluster.Close()
-		require.NoError(err)
-	}()
+	cluster, clusterCleanup, err := newServerCluster(jobs)
+	require.NoError(err)
+	defer clusterCleanup()
 
 	group, ctx := errgroup.WithContext(context.Background())
 
@@ -246,25 +199,18 @@ func TestGetRandomShardAsync(t *testing.T) {
 		})
 	}
 
-	err := group.Wait()
+	err = group.Wait()
 	require.NoError(err)
 }
 
 func TestGetRandomShardIteratorAsync(t *testing.T) {
 	require := require.New(t)
 
-	const jobs = 4096
+	const jobs = 32
 
-	var shards []string
-	for i := 0; i < jobs; i++ {
-		shards = append(shards, fmt.Sprintf("shard#%d", i+1))
-	}
-	cluster := NewCluster(shards)
-	require.NotNil(cluster)
-	defer func() {
-		err := cluster.Close()
-		require.NoError(err)
-	}()
+	cluster, clusterCleanup, err := newServerCluster(jobs)
+	require.NoError(err)
+	defer clusterCleanup()
 
 	group, ctx := errgroup.WithContext(context.Background())
 
@@ -357,6 +303,6 @@ func TestGetRandomShardIteratorAsync(t *testing.T) {
 		})
 	}
 
-	err := group.Wait()
+	err = group.Wait()
 	require.NoError(err)
 }

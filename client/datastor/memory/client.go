@@ -43,13 +43,16 @@ func (client *Client) SetObject(object datastor.Object) error {
 		return errNilData
 	}
 
-	obj := object
+	var obj datastor.Object
 	obj.Key = make([]byte, len(object.Key))
 	copy(obj.Key, object.Key)
 	obj.Data = make([]byte, len(object.Data))
 	copy(obj.Data, object.Data)
-	obj.ReferenceList = make([]string, len(object.ReferenceList))
-	copy(obj.ReferenceList, object.ReferenceList)
+
+	if length := len(object.ReferenceList); length > 0 {
+		obj.ReferenceList = make([]string, length)
+		copy(obj.ReferenceList, object.ReferenceList)
+	}
 
 	client.mux.Lock()
 	client.objects[string(obj.Key)] = obj
@@ -64,11 +67,23 @@ func (client *Client) GetObject(key []byte) (*datastor.Object, error) {
 	}
 	client.mux.RLock()
 	object, ok := client.objects[string(key)]
+	var obj datastor.Object
+	if ok {
+		obj.Key = make([]byte, len(object.Key))
+		copy(obj.Key, object.Key)
+		obj.Data = make([]byte, len(object.Data))
+		copy(obj.Data, object.Data)
+
+		if length := len(object.ReferenceList); length > 0 {
+			obj.ReferenceList = make([]string, length)
+			copy(obj.ReferenceList, object.ReferenceList)
+		}
+	}
 	client.mux.RUnlock()
 	if !ok {
 		return nil, datastor.ErrKeyNotFound
 	}
-	return &object, nil
+	return &obj, nil
 }
 
 // DeleteObject implements datastor.Client.DeleteObject
@@ -167,13 +182,18 @@ func (client *Client) GetReferenceList(key []byte) ([]string, error) {
 	}
 
 	client.mux.RLock()
-	object := client.objects[string(key)]
+	object, ok := client.objects[string(key)]
+	var refList []string
+	if ok {
+		refList = make([]string, len(object.ReferenceList))
+		copy(refList, object.ReferenceList)
+	}
 	client.mux.RUnlock()
 
-	if len(object.ReferenceList) == 0 {
+	if len(refList) == 0 {
 		return nil, datastor.ErrKeyNotFound
 	}
-	return object.ReferenceList, nil
+	return refList, nil
 }
 
 // GetReferenceCount implements datastor.Client.GetReferenceCount
@@ -184,8 +204,9 @@ func (client *Client) GetReferenceCount(key []byte) (int64, error) {
 
 	client.mux.RLock()
 	object := client.objects[string(key)]
+	count := int64(len(object.ReferenceList))
 	client.mux.RUnlock()
-	return int64(len(object.ReferenceList)), nil
+	return count, nil
 }
 
 // AppendToReferenceList implements datastor.Client.AppendToReferenceList

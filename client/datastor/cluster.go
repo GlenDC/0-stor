@@ -56,7 +56,7 @@ type Cluster interface {
 //
 // ShardIterator is /NOT/ thread-safe,
 // should you want to use it on multiple goroutines,
-// wrap the iterator using the function ``,
+// wrap the iterator using the function `ShardIteratorChannel`,
 // and use that function instead of this iterator directly.
 type ShardIterator interface {
 	// Next moves the iterator to the next available shard

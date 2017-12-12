@@ -13,9 +13,20 @@ func TestNewRandomStoragePanics(t *testing.T) {
 	}, "no cluster given")
 }
 
-func TestRandomStorageReadWrite(t *testing.T) {
+func TestRandomStorageReadWrite_InMemory(t *testing.T) {
 	cluster := memory.NewCluster([]string{"a", "b", "c"})
 	require.NotNil(t, cluster)
+
+	storage := NewRandomStorage(cluster)
+	require.NotNil(t, storage)
+
+	testStorageReadWrite(t, storage)
+}
+
+func TestRandomStorageReadWrite_GRPC(t *testing.T) {
+	cluster, cleanup, err := newGRPCServerCluster(3)
+	require.NoError(t, err)
+	defer cleanup()
 
 	storage := NewRandomStorage(cluster)
 	require.NotNil(t, storage)
