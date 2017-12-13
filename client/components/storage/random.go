@@ -71,22 +71,22 @@ func (rs *RandomObjectStorage) Read(cfg ObjectConfig) (datastor.Object, error) {
 }
 
 // Check implements storage.ObjectStorage.Check
-func (rs *RandomObjectStorage) Check(cfg ObjectConfig, fast bool) ObjectCheckStatus {
+func (rs *RandomObjectStorage) Check(cfg ObjectConfig, fast bool) (ObjectCheckStatus, error) {
 	if len(cfg.Shards) != 1 {
-		return ObjectCheckStatusInvalid
+		return ObjectCheckStatusInvalid, ErrUnexpectedShardsCount
 	}
 
 	shard, err := rs.cluster.GetShard(cfg.Shards[0])
 	if err != nil {
-		return ObjectCheckStatusInvalid
+		return ObjectCheckStatusInvalid, nil
 	}
 
 	status, err := shard.GetObjectStatus(cfg.Key)
 	if err != nil || status != datastor.ObjectStatusOK {
-		return ObjectCheckStatusInvalid
+		return ObjectCheckStatusInvalid, nil
 	}
 
-	return ObjectCheckStatusOptimal
+	return ObjectCheckStatusOptimal, nil
 }
 
 // Repair implements storage.ObjectStorage.Repair

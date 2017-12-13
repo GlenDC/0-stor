@@ -50,7 +50,8 @@ func testStorageReadCheckWrite(t *testing.T, storage ObjectStorage) {
 			require.Equal(len(inputObject.Data), cfg.DataSize)
 
 			// validate that all shards contain valid data
-			status := storage.Check(cfg, false)
+			status, err := storage.Check(cfg, false)
+			require.NoError(err)
 			require.Equal(ObjectCheckStatusOptimal, status)
 
 			// read object & validate
@@ -88,7 +89,8 @@ func testStorageReadCheckWrite(t *testing.T, storage ObjectStorage) {
 			require.Equal(len(data), cfg.DataSize)
 
 			// validate that all shards contain valid data
-			status := storage.Check(cfg, false)
+			status, err := storage.Check(cfg, false)
+			require.NoError(err)
 			require.Equal(ObjectCheckStatusOptimal, status)
 
 			// read object & validate

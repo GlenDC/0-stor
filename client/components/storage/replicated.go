@@ -60,27 +60,27 @@ type ReplicatedObjectStorage struct {
 func (rs *ReplicatedObjectStorage) Write(object datastor.Object) (ObjectConfig, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	group, ctx := errgroup.WithContext(ctx)
 
 	// request the worker goroutines,
 	// to get exactly replicationNr amount of replications.
 	requestCh := make(chan struct{}, rs.writeJobCount)
-	group.Go(func() error {
+	go func() {
 		defer close(requestCh) // closes itself
 		for i := rs.replicationNr; i > 0; i-- {
 			select {
 			case requestCh <- struct{}{}:
 			case <-ctx.Done():
-				return nil
+				return
 			}
 		}
-		return nil
-	})
+	}()
 
 	// create a channel-based iterator, to fetch the shards,
 	// randomly and thread-save
 	shardCh := datastor.ShardIteratorChannel(ctx,
 		rs.cluster.GetRandomShardIterator(nil), rs.writeJobCount)
+
+	group, ctx := errgroup.WithContext(ctx)
 
 	// write to replicationNr amount of shards,
 	// and return their identifiers over the resultCh,
@@ -210,8 +210,8 @@ func (rs *ReplicatedObjectStorage) Read(cfg ObjectConfig) (datastor.Object, erro
 }
 
 // Check implements storage.ObjectStorage.Check
-func (rs *ReplicatedObjectStorage) Check(cfg ObjectConfig, fast bool) ObjectCheckStatus {
-	return ObjectCheckStatusOptimal // TODO
+func (rs *ReplicatedObjectStorage) Check(cfg ObjectConfig, fast bool) (ObjectCheckStatus, error) {
+	return ObjectCheckStatusOptimal, nil // TODO
 }
 
 // Repair implements storage.ObjectStorage.Repair

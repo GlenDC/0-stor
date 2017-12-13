@@ -5,6 +5,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/zero-os/0-stor/client/datastor"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,8 +113,171 @@ func TestDistributedStorageReadCheckWrite(t *testing.T) {
 	})
 }
 
-func TestDistributedStorageRepair(t *testing.T) {
-	// TODO
+func TestDistributedStorageCheckRepair(t *testing.T) {
+	t.Run("k=1,m=1,jobCount=1", func(t *testing.T) {
+		testDistributedStorageCheckRepair(t, 1, 1, 1)
+	})
+	t.Run("k=1,m=1,jobCount=D", func(t *testing.T) {
+		testDistributedStorageCheckRepair(t, 1, 1, 0)
+	})
+	t.Run("k=4,m=2,jobCount=1", func(t *testing.T) {
+		testDistributedStorageCheckRepair(t, 4, 2, 1)
+	})
+	t.Run("k=4,m=2,jobCount=D", func(t *testing.T) {
+		testDistributedStorageCheckRepair(t, 4, 2, 0)
+	})
+	t.Run("k=10,m=3,jobCount=D", func(t *testing.T) {
+		testDistributedStorageCheckRepair(t, 10, 3, 0)
+	})
+	t.Run("k=10,m=3,jobCount=1", func(t *testing.T) {
+		testDistributedStorageCheckRepair(t, 10, 3, 1)
+	})
+}
+
+func testDistributedStorageCheckRepair(t *testing.T, k, m, jobCount int) {
+	require := require.New(t)
+
+	cluster, cleanup, err := newGRPCServerCluster((k + m) * 2)
+	require.NoError(err)
+	defer cleanup()
+
+	storage, err := NewDistributedObjectStorage(cluster, k, m, jobCount)
+	require.NoError(err)
+	require.NotNil(storage)
+
+	const (
+		dataSize = 512
+	)
+
+	key := []byte("myKey")
+	inputObject := datastor.Object{
+		Key:           key,
+		Data:          make([]byte, dataSize),
+		ReferenceList: []string{"uer1", "user2"},
+	}
+	_, err = rand.Read(inputObject.Data)
+	require.NoError(err)
+
+	cfg, err := storage.Write(inputObject)
+	require.NoError(err)
+	require.Equal(inputObject.Key, cfg.Key)
+	require.Equal(dataSize, cfg.DataSize)
+
+	// with all shards intact, we should have an optional result, and reading should be possible
+
+	status, err := storage.Check(cfg, false)
+	require.NoError(err)
+	require.Equal(ObjectCheckStatusOptimal, status)
+
+	status, err = storage.Check(cfg, true)
+	require.NoError(err)
+	require.Equal(ObjectCheckStatusValid, status)
+
+	outputObject, err := storage.Read(cfg)
+	require.NoError(err)
+	require.Equal(inputObject, outputObject)
+
+	// now let's drop shards, as long as this still results in a valid, but not optimal result
+
+	for n := 1; n <= m; n++ {
+		invalidNShards(t, cfg.Shards, n, key, cluster)
+
+		// now that our shards have been messed with,
+		// we have a valid, but not-optimal result (still usable/readable though)
+
+		status, err := storage.Check(cfg, false)
+		require.NoError(err)
+		require.Equal(ObjectCheckStatusValid, status)
+
+		status, err = storage.Check(cfg, true)
+		require.NoError(err)
+		require.Equal(ObjectCheckStatusValid, status)
+
+		outputObject, err := storage.Read(cfg)
+		require.NoError(err)
+		require.Equal(inputObject, outputObject)
+
+		// let's repair it to make it optimal once again,
+		// this will change our config though
+
+		cfg, err = storage.Repair(cfg)
+		require.NoError(err)
+		require.Equal(inputObject.Key, cfg.Key)
+		require.Len(cfg.Shards, k+m)
+		require.Equal(dataSize, cfg.DataSize)
+
+		// now we should get an optimal check result again
+
+		status, err = storage.Check(cfg, false)
+		require.NoError(err)
+		require.Equal(ObjectCheckStatusOptimal, status)
+
+		outputObject, err = storage.Read(cfg)
+		require.NoError(err)
+		require.Equal(inputObject, outputObject)
+	}
+
+	// now let's drop more than the allowed shard count,
+	// this should always make our check fail, and repairing/reading should never be possible
+	for n := m + 1; n <= k+m; n++ {
+		invalidNShards(t, cfg.Shards, n, key, cluster)
+
+		status, err := storage.Check(cfg, false)
+		require.NoError(err)
+		require.Equal(ObjectCheckStatusInvalid, status)
+
+		status, err = storage.Check(cfg, true)
+		require.NoError(err)
+		require.Equal(ObjectCheckStatusInvalid, status)
+
+		_, err = storage.Read(cfg)
+		require.Error(err)
+
+		_, err = storage.Repair(cfg)
+		require.Error(err)
+
+		_, err = storage.Read(cfg)
+		require.Error(err)
+
+		// restore by writing, so our next iteration works again
+
+		cfg, err = storage.Write(inputObject)
+		require.NoError(err)
+		require.Equal(inputObject.Key, cfg.Key)
+		require.Equal(dataSize, cfg.DataSize)
+	}
+}
+
+func invalidNShards(t *testing.T, shards []string, n int, key []byte, cluster datastor.Cluster) {
+	// compute invalid indices
+	var (
+		validIndices []int
+		length       = len(shards)
+	)
+	for i := 0; i < length; i++ {
+		validIndices = append(validIndices, i)
+	}
+	realLength := int64(length)
+	for i := 0; i < n; i++ {
+		index := datastor.RandShardIndex(realLength)
+		validIndices = append(validIndices[:index], validIndices[index+1:]...)
+		realLength--
+	}
+
+	// invalidate the shards, which have non-valid indices
+	for i, shardID := range shards {
+		if len(validIndices) > 0 && validIndices[0] == i {
+			validIndices = validIndices[1:]
+			continue
+		}
+
+		shard, err := cluster.GetShard(shardID)
+		require.NoError(t, err)
+		require.NotNil(t, shard)
+
+		err = shard.DeleteObject(key)
+		require.NoError(t, err)
+	}
 }
 
 func TestReedSolomonEncoderDecoderPanics(t *testing.T) {
@@ -191,12 +356,36 @@ func TestReedSolomonEncoderDecoderAsyncUsage(t *testing.T) {
 	})
 }
 
+func TestReedSolomonEncoderDecoderResilience(t *testing.T) {
+	t.Run("k=1, m=1", func(t *testing.T) {
+		testReedSolomonEncoderDecoderResilience(t, 1, 1)
+	})
+	t.Run("k=2, m=1", func(t *testing.T) {
+		testReedSolomonEncoderDecoderResilience(t, 2, 1)
+	})
+	t.Run("k=1, m=2", func(t *testing.T) {
+		testReedSolomonEncoderDecoderResilience(t, 1, 2)
+	})
+	t.Run("k=5, m=2", func(t *testing.T) {
+		testReedSolomonEncoderDecoderResilience(t, 5, 2)
+	})
+	t.Run("k=10, m=3", func(t *testing.T) {
+		testReedSolomonEncoderDecoderResilience(t, 10, 3)
+	})
+	t.Run("k=16, m=16", func(t *testing.T) {
+		testReedSolomonEncoderDecoderResilience(t, 16, 16)
+	})
+}
+
 func testReedSolomonEncoderDecoderAsyncUsage(t *testing.T, k, m, jobCount int) {
 	assert := assert.New(t)
 
 	ed, err := NewReedSolomonEncoderDecoder(k, m)
 	require.NoError(t, err)
 	require.NotNil(t, ed)
+
+	require.Equal(t, k, ed.MinimumValidShardCount())
+	require.Equal(t, k+m, ed.RequiredShardCount())
 
 	var wg sync.WaitGroup
 	wg.Add(jobCount)
@@ -229,6 +418,9 @@ func testReedSolomonEncoderDecoder(t *testing.T, k, m int) {
 	require.NoError(err)
 	require.NotNil(ed)
 
+	require.Equal(k, ed.MinimumValidShardCount())
+	require.Equal(k+m, ed.RequiredShardCount())
+
 	testCases := []string{
 		"a",
 		"Hello, World!",
@@ -250,4 +442,70 @@ func testReedSolomonEncoderDecoder(t *testing.T, k, m int) {
 		require.NoError(err)
 		require.Equal(testCase, string(data))
 	}
+}
+
+func testReedSolomonEncoderDecoderResilience(t *testing.T, k, m int) {
+	require := assert.New(t)
+
+	ed, err := NewReedSolomonEncoderDecoder(k, m)
+	require.NoError(err)
+	require.NotNil(ed)
+
+	const (
+		repeatCount = 8
+		dataSize    = 512
+	)
+
+	require.Equal(k, ed.MinimumValidShardCount())
+	require.Equal(k+m, ed.RequiredShardCount())
+
+	for tryCount := 0; tryCount < repeatCount; tryCount++ {
+		input := make([]byte, dataSize)
+		_, err = rand.Read(input)
+		require.NoError(err)
+
+		parts, err := ed.Encode(input)
+		require.NoError(err)
+		require.NotEmpty(parts)
+
+		// test recovery, which should be possible, as long as `len(parts) >= k`
+		for n := 0; n <= m; n++ {
+			parts := getAllPartsMinusNParts(parts, n)
+			require.True(len(parts) >= k)
+
+			output, err := ed.Decode(parts, dataSize)
+			require.NoErrorf(err, "tryCount=%d; n=%d", tryCount, n)
+			require.Equalf(input, output, "tryCount=%d; n=%d", tryCount, n)
+		}
+	}
+}
+
+func getAllPartsMinusNParts(parts [][]byte, n int) [][]byte {
+	// compute invalid indices
+	var (
+		validIndices []int
+		length       = len(parts)
+	)
+	for i := 0; i < length; i++ {
+		validIndices = append(validIndices, i)
+	}
+	realLength := int64(length)
+	for i := 0; i < n; i++ {
+		index := datastor.RandShardIndex(realLength)
+		validIndices = append(validIndices[:index], validIndices[index+1:]...)
+		realLength--
+	}
+
+	// create output parts
+	outputParts := make([][]byte, length)
+	for i, part := range parts {
+		if len(validIndices) == 0 || validIndices[0] != i {
+			continue
+		}
+		validIndices = validIndices[1:]
+		outputPart := make([]byte, len(part))
+		copy(outputPart, part)
+		outputParts[i] = outputPart
+	}
+	return outputParts
 }

@@ -42,7 +42,11 @@ type ObjectStorage interface {
 	// The fast parameter can be given in case you want to do a fast check only,
 	// which means it will return as soon as the object is found to be in a valid condition,
 	// ignoring the possibility that it could even be in excellent condition.
-	Check(cfg ObjectConfig, fast bool) ObjectCheckStatus
+	//
+	// An error can be returned in case the given config
+	// is not compatible with the used storage.
+	// Meaning the object cannot be read, written or repaired.
+	Check(cfg ObjectConfig, fast bool) (ObjectCheckStatus, error)
 
 	// Repair will try to repair an object, already stored within the Storage.
 	// If the object could be repaired, the new StorageConfig will
