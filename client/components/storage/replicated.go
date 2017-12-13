@@ -10,16 +10,11 @@ import (
 	"github.com/zero-os/0-stor/client/datastor"
 )
 
-// TODO:
-//   + Draw out the design for:
-//        + ReplicateStorage Write/Read
-//        + DistributeStorage Write/Read
-
-// NewReplicatedStorage creates a new ReplicatedStorage.
-// See `ReplicatedStorage` for more information.
+// NewReplicatedObjectStorage creates a new ReplicatedObjectStorage.
+// See `ReplicatedObjectStorage` for more information.
 //
 // jobCount is optional and can be `<= 0` in order to use DefaultJobCount.
-func NewReplicatedStorage(cluster datastor.Cluster, replicationNr, jobCount int) *ReplicatedStorage {
+func NewReplicatedObjectStorage(cluster datastor.Cluster, replicationNr, jobCount int) *ReplicatedObjectStorage {
 	if cluster == nil {
 		panic("no cluster given")
 	}
@@ -35,7 +30,7 @@ func NewReplicatedStorage(cluster datastor.Cluster, replicationNr, jobCount int)
 		writeJobCount = replicationNr
 	}
 
-	return &ReplicatedStorage{
+	return &ReplicatedObjectStorage{
 		cluster:       cluster,
 		replicationNr: replicationNr,
 		readJobCount:  jobCount,
@@ -43,7 +38,7 @@ func NewReplicatedStorage(cluster datastor.Cluster, replicationNr, jobCount int)
 	}
 }
 
-// ReplicatedStorage defines a storage implementation,
+// ReplicatedObjectStorage defines a storage implementation,
 // which writes an object to multiple shards at once,
 // the amount of shards which is defined by the used replicationNr.
 //
@@ -55,14 +50,14 @@ func NewReplicatedStorage(cluster datastor.Cluster, replicationNr, jobCount int)
 // Repairing is done by first assembling a list of corrupt, OK and dead shards.
 // Once that's done, the corrupt shards will be simply tried to be written to again,
 // while the dead shards will be attempted to be replaced, if possible.
-type ReplicatedStorage struct {
+type ReplicatedObjectStorage struct {
 	cluster                     datastor.Cluster
 	replicationNr               int
 	readJobCount, writeJobCount int
 }
 
-// Write implements storage.Storage.Write
-func (rs *ReplicatedStorage) Write(object datastor.Object) (StorageConfig, error) {
+// Write implements storage.ObjectStorage.Write
+func (rs *ReplicatedObjectStorage) Write(object datastor.Object) (ObjectConfig, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	group, ctx := errgroup.WithContext(ctx)
@@ -123,7 +118,7 @@ func (rs *ReplicatedStorage) Write(object datastor.Object) (StorageConfig, error
 						if !open {
 							// not enough shards are available,
 							// we know this because the iterator ch has already been closed
-							return ErrInsufficientShards
+							return ErrShardsUnavailable
 						}
 					case <-ctx.Done():
 						return errors.New("context was unexpectedly cancelled, " +
@@ -169,16 +164,16 @@ func (rs *ReplicatedStorage) Write(object datastor.Object) (StorageConfig, error
 		shards = append(shards, id)
 	}
 
-	cfg := StorageConfig{Key: object.Key, Shards: shards, DataSize: len(object.Data)}
+	cfg := ObjectConfig{Key: object.Key, Shards: shards, DataSize: len(object.Data)}
 	// check if we have sufficient replications
 	if len(shards) < rs.replicationNr {
-		return cfg, ErrInsufficientShards
+		return cfg, ErrShardsUnavailable
 	}
 	return cfg, nil
 }
 
-// Read implements storage.Storage.Read
-func (rs *ReplicatedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
+// Read implements storage.ObjectStorage.Read
+func (rs *ReplicatedObjectStorage) Read(cfg ObjectConfig) (datastor.Object, error) {
 	// ensure that plenty of shards are available
 	if len(cfg.Shards) < rs.replicationNr {
 		return datastor.Object{}, ErrUnexpectedShardsCount
@@ -214,16 +209,21 @@ func (rs *ReplicatedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 	return datastor.Object{}, ErrShardsUnavailable
 }
 
-// Repair implements storage.Storage.Repair
-func (rs *ReplicatedStorage) Repair(cfg StorageConfig) (StorageConfig, error) {
+// Check implements storage.ObjectStorage.Check
+func (rs *ReplicatedObjectStorage) Check(cfg ObjectConfig, fast bool) ObjectCheckStatus {
+	return ObjectCheckStatusOptimal // TODO
+}
+
+// Repair implements storage.ObjectStorage.Repair
+func (rs *ReplicatedObjectStorage) Repair(cfg ObjectConfig) (ObjectConfig, error) {
 	panic("TODO")
 }
 
-// Close implements storage.Storage.Close
-func (rs *ReplicatedStorage) Close() error {
+// Close implements storage.ObjectStorage.Close
+func (rs *ReplicatedObjectStorage) Close() error {
 	return rs.cluster.Close()
 }
 
 var (
-	_ Storage = (*ReplicatedStorage)(nil)
+	_ ObjectStorage = (*ReplicatedObjectStorage)(nil)
 )

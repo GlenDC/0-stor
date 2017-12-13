@@ -4,43 +4,29 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/zero-os/0-stor/client/datastor/memory"
 )
 
 func TestNewRandomStoragePanics(t *testing.T) {
 	require.Panics(t, func() {
-		NewRandomStorage(nil)
+		NewRandomObjectStorage(nil)
 	}, "no cluster given")
 }
 
-func TestRandomStorageReadWrite_InMemory(t *testing.T) {
-	cluster := memory.NewCluster([]string{"a", "b", "c"})
-	require.NotNil(t, cluster)
-
-	storage := NewRandomStorage(cluster)
-	require.NotNil(t, storage)
-
-	testStorageReadWrite(t, storage, cluster)
-}
-
-func TestRandomStorageReadWrite_GRPC(t *testing.T) {
+func TestRandomStorageReadCheckWrite(t *testing.T) {
 	cluster, cleanup, err := newGRPCServerCluster(3)
 	require.NoError(t, err)
 	defer cleanup()
 
-	storage := NewRandomStorage(cluster)
+	storage := NewRandomObjectStorage(cluster)
 	require.NotNil(t, storage)
 
-	testStorageReadWrite(t, storage, cluster)
+	testStorageReadCheckWrite(t, storage)
 }
 
 func TestRandomStorageRepair(t *testing.T) {
 	require := require.New(t)
 
-	cluster := memory.NewCluster(nil)
-	require.NotNil(cluster)
-
-	storage := NewRandomStorage(cluster)
+	storage := NewRandomObjectStorage(dummyCluster{})
 	require.NotNil(storage)
 
 	defer func() {
@@ -48,7 +34,7 @@ func TestRandomStorageRepair(t *testing.T) {
 		require.NoError(err)
 	}()
 
-	cfg, err := storage.Repair(StorageConfig{})
+	cfg, err := storage.Repair(ObjectConfig{})
 	require.Equal(ErrNotSupported, err)
-	require.Equal(StorageConfig{}, cfg)
+	require.Equal(ObjectConfig{}, cfg)
 }

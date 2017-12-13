@@ -11,21 +11,21 @@ import (
 	"github.com/zero-os/0-stor/client/datastor"
 )
 
-// NewDistributedStorage creates a new DistributedStorage,
+// NewDistributedObjectStorage creates a new DistributedObjectStorage,
 // using the given Cluster and default ReedSolomonEncoderDecoder as internal DistributedEncoderDecoder.
-// See `DistributedStorage` `DistributedEncoderDecoder` for more information.
-func NewDistributedStorage(cluster datastor.Cluster, k, m, jobCount int) (*DistributedStorage, error) {
+// See `DistributedObjectStorage` `DistributedEncoderDecoder` for more information.
+func NewDistributedObjectStorage(cluster datastor.Cluster, k, m, jobCount int) (*DistributedObjectStorage, error) {
 	dec, err := NewReedSolomonEncoderDecoder(k, m)
 	if err != nil {
 		return nil, err
 	}
-	return NewDistributedStorageWithEncoderDecoder(cluster, dec, jobCount), nil
+	return NewDistributedObjectStorageWithEncoderDecoder(cluster, dec, jobCount), nil
 }
 
-// NewDistributedStorageWithEncoderDecoder creates a new DistributedStorage,
+// NewDistributedObjectStorageWithEncoderDecoder creates a new DistributedObjectStorage,
 // using the given Cluster and DistributedEncoderDecoder.
-// See `DistributedStorage` `DistributedEncoderDecoder` for more information.
-func NewDistributedStorageWithEncoderDecoder(cluster datastor.Cluster, dec DistributedEncoderDecoder, jobCount int) *DistributedStorage {
+// See `DistributedObjectStorage` `DistributedEncoderDecoder` for more information.
+func NewDistributedObjectStorageWithEncoderDecoder(cluster datastor.Cluster, dec DistributedEncoderDecoder, jobCount int) *DistributedObjectStorage {
 	if cluster == nil {
 		panic("no Cluster given")
 	}
@@ -37,14 +37,14 @@ func NewDistributedStorageWithEncoderDecoder(cluster datastor.Cluster, dec Distr
 		jobCount = DefaultJobCount
 	}
 
-	return &DistributedStorage{
+	return &DistributedObjectStorage{
 		cluster:  cluster,
 		dec:      dec,
 		jobCount: jobCount,
 	}
 }
 
-// DistributedStorage defines a storage implementation,
+// DistributedObjectStorage defines a storage implementation,
 // which splits and distributes data over a secure amount of shards,
 // rather than just writing it to a single shard as it is.
 // This to provide protection against data loss when one of the used shards drops.
@@ -55,19 +55,19 @@ func NewDistributedStorageWithEncoderDecoder(cluster datastor.Cluster, dec Distr
 // When using this default distributed encoder-decoder,
 // you need to provide at least 2 shards (1 data- and 1 parity- shard).
 //
-// When creating a DistributedStorage you can also pass in your
+// When creating a DistributedObjectStorage you can also pass in your
 // own DistributedEncoderDecoder should you not be satisfied with the default implementation.
-type DistributedStorage struct {
+type DistributedObjectStorage struct {
 	cluster  datastor.Cluster
 	dec      DistributedEncoderDecoder
 	jobCount int
 }
 
-// Write implements storage.Storage.Write
-func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, error) {
+// Write implements storage.ObjectStorage.Write
+func (ds *DistributedObjectStorage) Write(object datastor.Object) (ObjectConfig, error) {
 	parts, err := ds.dec.Encode(object.Data)
 	if err != nil {
-		return StorageConfig{}, err
+		return ObjectConfig{}, err
 	}
 
 	group, ctx := errgroup.WithContext(context.Background())
@@ -146,7 +146,7 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 						if !open {
 							// not enough shards are available,
 							// we know this because the iterator ch has already been closed
-							return ErrInsufficientShards
+							return ErrShardsUnavailable
 						}
 					case <-ctx.Done():
 						return errors.New("context was unexpectedly cancelled, " +
@@ -201,16 +201,16 @@ func (ds *DistributedStorage) Write(object datastor.Object) (StorageConfig, erro
 		resultCount++
 	}
 
-	cfg := StorageConfig{Key: object.Key, Shards: shards, DataSize: len(object.Data)}
+	cfg := ObjectConfig{Key: object.Key, Shards: shards, DataSize: len(object.Data)}
 	// check if we have sufficient distributions
 	if resultCount < partsCount {
-		return cfg, ErrInsufficientShards
+		return cfg, ErrShardsUnavailable
 	}
 	return cfg, nil
 }
 
-// Read implements storage.Storage.Read
-func (ds *DistributedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
+// Read implements storage.ObjectStorage.Read
+func (ds *DistributedObjectStorage) Read(cfg ObjectConfig) (datastor.Object, error) {
 	// validate the input shard count
 	shardCount := len(cfg.Shards)
 	if shardCount < 2 { // min shard count (k+m, where both values are 1)
@@ -363,18 +363,23 @@ func (ds *DistributedStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 	}, nil
 }
 
-// Repair implements storage.Storage.Repair
-func (ds *DistributedStorage) Repair(cfg StorageConfig) (StorageConfig, error) {
+// Check implements storage.ObjectStorage.Check
+func (ds *DistributedObjectStorage) Check(cfg ObjectConfig, fast bool) ObjectCheckStatus {
+	return ObjectCheckStatusOptimal // TODO
+}
+
+// Repair implements storage.ObjectStorage.Repair
+func (ds *DistributedObjectStorage) Repair(cfg ObjectConfig) (ObjectConfig, error) {
 	panic("TODO")
 }
 
-// Close implements storage.Storage.Close
-func (ds *DistributedStorage) Close() error {
+// Close implements storage.ObjectStorage.Close
+func (ds *DistributedObjectStorage) Close() error {
 	return ds.cluster.Close()
 }
 
 // DistributedEncoderDecoder is the type used internally to
-// read and write the data of objects, read and written using the DistributedStorage.
+// read and write the data of objects, read and written using the DistributedObjectStorage.
 type DistributedEncoderDecoder interface {
 	// Encode object data into multiple (distributed) parts,
 	// such that those parts can be reconstructed when the data has to be read again.
@@ -409,7 +414,7 @@ func NewReedSolomonEncoderDecoder(k, m int) (*ReedSolomonEncoderDecoder, error) 
 // using the erasure encoding library github.com/templexxx/reedsolomon.
 //
 // This implementation is also used as the default DistributedEncoderDecoder
-// for the DistributedStorage storage type.
+// for the DistributedObjectStorage storage type.
 type ReedSolomonEncoderDecoder struct {
 	k, m int                         // data and parity count
 	er   reedsolomon.EncodeReconster // encoder  & decoder
@@ -490,7 +495,7 @@ func (rs *ReedSolomonEncoderDecoder) getPadLen(dataLen int) int {
 }
 
 var (
-	_ Storage = (*DistributedStorage)(nil)
+	_ ObjectStorage = (*DistributedObjectStorage)(nil)
 
 	_ DistributedEncoderDecoder = (*ReedSolomonEncoderDecoder)(nil)
 )

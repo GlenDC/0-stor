@@ -5,25 +5,25 @@ import (
 	"github.com/zero-os/0-stor/client/datastor"
 )
 
-// NewRandomStorage creates a new RandomStorage.
-// See `RandomStorage` for more information.
-func NewRandomStorage(cluster datastor.Cluster) *RandomStorage {
+// NewRandomObjectStorage creates a new RandomObjectStorage.
+// See `RandomObjectStorage` for more information.
+func NewRandomObjectStorage(cluster datastor.Cluster) *RandomObjectStorage {
 	if cluster == nil {
 		panic("no cluster given")
 	}
-	return &RandomStorage{cluster: cluster}
+	return &RandomObjectStorage{cluster: cluster}
 }
 
-// RandomStorage is the most simplest Storage implementation.
+// RandomObjectStorage is the most simplest Storage implementation.
 // For writing it only writes to one shard, randomly chosen.
 // For reading it expects just, and only, one shard, to read from.
 // Repairing is not supported for this storage for obvious reasons.
-type RandomStorage struct {
+type RandomObjectStorage struct {
 	cluster datastor.Cluster
 }
 
-// Write implements storage.Storage.Write
-func (rs *RandomStorage) Write(object datastor.Object) (StorageConfig, error) {
+// Write implements storage.ObjectStorage.Write
+func (rs *RandomObjectStorage) Write(object datastor.Object) (ObjectConfig, error) {
 	var (
 		err   error
 		shard datastor.Shard
@@ -36,7 +36,7 @@ func (rs *RandomStorage) Write(object datastor.Object) (StorageConfig, error) {
 		shard = it.Shard()
 		err = shard.SetObject(object)
 		if err == nil {
-			return StorageConfig{
+			return ObjectConfig{
 				Key:      object.Key,
 				Shards:   []string{shard.Identifier()},
 				DataSize: len(object.Data),
@@ -45,11 +45,11 @@ func (rs *RandomStorage) Write(object datastor.Object) (StorageConfig, error) {
 		log.Errorf("failed to write %q to random shard %q: %v",
 			object.Key, shard.Identifier(), err)
 	}
-	return StorageConfig{}, ErrInsufficientShards
+	return ObjectConfig{}, ErrShardsUnavailable
 }
 
-// Read implements storage.Storage.Read
-func (rs *RandomStorage) Read(cfg StorageConfig) (datastor.Object, error) {
+// Read implements storage.ObjectStorage.Read
+func (rs *RandomObjectStorage) Read(cfg ObjectConfig) (datastor.Object, error) {
 	if len(cfg.Shards) != 1 {
 		return datastor.Object{}, ErrUnexpectedShardsCount
 	}
@@ -70,16 +70,35 @@ func (rs *RandomStorage) Read(cfg StorageConfig) (datastor.Object, error) {
 	return *object, nil
 }
 
-// Repair implements storage.Storage.Repair
-func (rs *RandomStorage) Repair(cfg StorageConfig) (StorageConfig, error) {
-	return StorageConfig{}, ErrNotSupported
+// Check implements storage.ObjectStorage.Check
+func (rs *RandomObjectStorage) Check(cfg ObjectConfig, fast bool) ObjectCheckStatus {
+	if len(cfg.Shards) != 1 {
+		return ObjectCheckStatusInvalid
+	}
+
+	shard, err := rs.cluster.GetShard(cfg.Shards[0])
+	if err != nil {
+		return ObjectCheckStatusInvalid
+	}
+
+	status, err := shard.GetObjectStatus(cfg.Key)
+	if err != nil || status != datastor.ObjectStatusOK {
+		return ObjectCheckStatusInvalid
+	}
+
+	return ObjectCheckStatusOptimal
 }
 
-// Close implements storage.Storage.Close
-func (rs *RandomStorage) Close() error {
+// Repair implements storage.ObjectStorage.Repair
+func (rs *RandomObjectStorage) Repair(cfg ObjectConfig) (ObjectConfig, error) {
+	return ObjectConfig{}, ErrNotSupported
+}
+
+// Close implements storage.ObjectStorage.Close
+func (rs *RandomObjectStorage) Close() error {
 	return rs.cluster.Close()
 }
 
 var (
-	_ Storage = (*RandomStorage)(nil)
+	_ ObjectStorage = (*RandomObjectStorage)(nil)
 )
