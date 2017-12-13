@@ -13,10 +13,10 @@ import (
 // Unlisted shards's clients are also stored, bu those are loaded on the fly, only when needed.
 func NewCluster(addresses []string, label, jwtToken string) (*Cluster, error) {
 	if len(addresses) == 0 {
-		panic("no listed addresses given")
+		return nil, errors.New("no listed addresses given")
 	}
 	if label == "" {
-		panic("no label given")
+		return nil, errors.New("no label given")
 	}
 
 	var (

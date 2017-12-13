@@ -555,10 +555,10 @@ type DistributedEncoderDecoder interface {
 // See `ReedSolomonEncoderDecoder` for more information.
 func NewReedSolomonEncoderDecoder(k, m int) (*ReedSolomonEncoderDecoder, error) {
 	if k < 1 {
-		panic("k (data shard count) has to be at least 1")
+		return nil, errors.New("k (data shard count) has to be at least 1")
 	}
 	if m < 1 {
-		panic("m (parity shard count) has to be at least 1")
+		return nil, errors.New("m (parity shard count) has to be at least 1")
 	}
 
 	er, err := reedsolomon.New(k, m)

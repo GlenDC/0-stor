@@ -298,6 +298,11 @@ func TestReedSolomonEncoderDecoderPanics(t *testing.T) {
 func TestReedSolomonEncoderDecoderErrors(t *testing.T) {
 	require := require.New(t)
 
+	_, err := NewReedSolomonEncoderDecoder(0, 1)
+	require.Error(err, "k is too small")
+	_, err = NewReedSolomonEncoderDecoder(1, 0)
+	require.Error(err, "m is too small")
+
 	require.Error(func() error {
 		ed, err := NewReedSolomonEncoderDecoder(1, 1)
 		require.NoError(err)
