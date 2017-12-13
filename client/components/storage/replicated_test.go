@@ -72,6 +72,6 @@ func TestReplicationStorageReadCheckWrite(t *testing.T) {
 	})
 }
 
-func TestReplicatedStorageRepair(t *testing.T) {
+func TestReplicatedStorageCheckRepair(t *testing.T) {
 	// TODO
 }

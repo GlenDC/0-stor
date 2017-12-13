@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -33,7 +34,7 @@ func NewReplicatedObjectStorage(cluster datastor.Cluster, replicationNr, jobCoun
 	return &ReplicatedObjectStorage{
 		cluster:       cluster,
 		replicationNr: replicationNr,
-		readJobCount:  jobCount,
+		jobCount:      jobCount,
 		writeJobCount: writeJobCount,
 	}
 }
@@ -51,9 +52,9 @@ func NewReplicatedObjectStorage(cluster datastor.Cluster, replicationNr, jobCoun
 // Once that's done, the corrupt shards will be simply tried to be written to again,
 // while the dead shards will be attempted to be replaced, if possible.
 type ReplicatedObjectStorage struct {
-	cluster                     datastor.Cluster
-	replicationNr               int
-	readJobCount, writeJobCount int
+	cluster                 datastor.Cluster
+	replicationNr           int
+	jobCount, writeJobCount int
 }
 
 // Write implements storage.ObjectStorage.Write
@@ -174,9 +175,9 @@ func (rs *ReplicatedObjectStorage) Write(object datastor.Object) (ObjectConfig, 
 
 // Read implements storage.ObjectStorage.Read
 func (rs *ReplicatedObjectStorage) Read(cfg ObjectConfig) (datastor.Object, error) {
-	// ensure that plenty of shards are available
-	if len(cfg.Shards) < rs.replicationNr {
-		return datastor.Object{}, ErrUnexpectedShardsCount
+	// ensure that at least 1 shard is given
+	if len(cfg.Shards) == 0 {
+		return datastor.Object{}, nil
 	}
 
 	var (
@@ -211,7 +212,112 @@ func (rs *ReplicatedObjectStorage) Read(cfg ObjectConfig) (datastor.Object, erro
 
 // Check implements storage.ObjectStorage.Check
 func (rs *ReplicatedObjectStorage) Check(cfg ObjectConfig, fast bool) (ObjectCheckStatus, error) {
-	return ObjectCheckStatusOptimal, nil // TODO
+	shardCount := len(cfg.Shards)
+	if shardCount == 0 {
+		return ObjectCheckStatusInvalid, ErrUnexpectedShardsCount
+	}
+
+	// define the jobCount
+	jobCount := rs.jobCount
+	if jobCount > shardCount {
+		jobCount = shardCount
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// create a channel-based iterator, to fetch the shards,
+	// randomly and thread-save
+	shardCh := datastor.ShardIteratorChannel(ctx,
+		datastor.NewLazyShardIterator(rs.cluster, cfg.Shards), jobCount)
+
+	// each worker will help us get through all shards,
+	// until we found the desired amount of valid shards,
+	// the maximum which is helped guarantee by the requestCh iterator,
+	// while the minimum is defined by that same channel or by exhausting the shardCh.
+	resultCh := make(chan struct{}, jobCount)
+
+	// create our goroutine,
+	// to close our resultCh in case we have exhausted our worker goroutines
+	var wg sync.WaitGroup
+	wg.Add(jobCount)
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	// create all the actual workers
+	for i := 0; i < jobCount; i++ {
+		go func() {
+			var (
+				open   bool
+				err    error
+				status datastor.ObjectStatus
+				shard  datastor.Shard
+			)
+
+			for {
+				// fetch a random shard,
+				// it's an error if this is not possible,
+				// as a shard is expected to be still available at this stage
+				select {
+				case shard, open = <-shardCh:
+					if !open {
+						return
+					}
+				case <-ctx.Done():
+					return
+				}
+
+				// validate if the object's status for this shard is OK
+				status, err = shard.GetObjectStatus(cfg.Key)
+				if err != nil {
+					log.Errorf("error while validating %q stored on shard %q: %v",
+						cfg.Key, shard.Identifier(), err)
+					continue
+				}
+				if status != datastor.ObjectStatusOK {
+					log.Debugf("object %q stored on shard %q is not valid: %s",
+						cfg.Key, shard.Identifier(), status)
+					continue
+				}
+
+				// shard is valid for this object,
+				// notify the result collector about it
+				select {
+				case resultCh <- struct{}{}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	// if we want a fast result,
+	// we simply want to know that at least one is available
+	if fast {
+		select {
+		case <-resultCh:
+			return ObjectCheckStatusValid, nil
+		case <-ctx.Done():
+			return ObjectCheckStatusInvalid, nil
+		}
+	}
+
+	// otherwise we'll go through all of them,
+	// until we have a max of nrReplication results
+	var validShardCount int
+	for range resultCh {
+		validShardCount++
+		if validShardCount == rs.replicationNr {
+			return ObjectCheckStatusOptimal, nil
+		}
+	}
+
+	if validShardCount > 0 {
+		return ObjectCheckStatusValid, nil
+	}
+	return ObjectCheckStatusInvalid, nil
 }
 
 // Repair implements storage.ObjectStorage.Repair
