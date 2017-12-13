@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/rand"
 	"fmt"
+	"math"
 	mathRand "math/rand"
 	"testing"
 
@@ -96,4 +97,16 @@ func testStorageReadCheckWrite(t *testing.T, storage ObjectStorage) {
 			require.Equal(inputObject, outputObject)
 		}
 	})
+}
+
+func TestObjectCheckStatusString(t *testing.T) {
+	require := require.New(t)
+
+	// valid enum values
+	require.Equal("invalid", ObjectCheckStatusInvalid.String())
+	require.Equal("valid", ObjectCheckStatusValid.String())
+	require.Equal("optimal", ObjectCheckStatusOptimal.String())
+
+	// invalid enum value
+	require.Empty(ObjectCheckStatus(math.MaxUint8).String())
 }
