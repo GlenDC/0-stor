@@ -2,6 +2,7 @@ package storage
 
 import (
 	"crypto/rand"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -180,7 +181,7 @@ func testDistributedStorageCheckRepair(t *testing.T, k, m, jobCount int) {
 	// now let's drop shards, as long as this still results in a valid, but not optimal result
 
 	for n := 1; n <= m; n++ {
-		invalidNShards(t, cfg.Shards, n, key, cluster)
+		invalidateShards(t, cfg.Shards, n, key, cluster)
 
 		// now that our shards have been messed with,
 		// we have a valid, but not-optimal result (still usable/readable though)
@@ -220,7 +221,7 @@ func testDistributedStorageCheckRepair(t *testing.T, k, m, jobCount int) {
 	// now let's drop more than the allowed shard count,
 	// this should always make our check fail, and repairing/reading should never be possible
 	for n := m + 1; n <= k+m; n++ {
-		invalidNShards(t, cfg.Shards, n, key, cluster)
+		invalidateShards(t, cfg.Shards, n, key, cluster)
 
 		status, err := storage.Check(cfg, false)
 		require.NoError(err)
@@ -248,22 +249,25 @@ func testDistributedStorageCheckRepair(t *testing.T, k, m, jobCount int) {
 	}
 }
 
-func invalidNShards(t *testing.T, shards []string, n int, key []byte, cluster datastor.Cluster) {
+func invalidateShards(t *testing.T, shards []string, n int, key []byte, cluster datastor.Cluster) {
 	// compute invalid indices
 	var (
 		validIndices []int
 		length       = len(shards)
 	)
-	for i := 0; i < length; i++ {
-		validIndices = append(validIndices, i)
-	}
-	realLength := int64(length)
-	for i := 0; i < n; i++ {
-		index := datastor.RandShardIndex(realLength)
-		validIndices = append(validIndices[:index], validIndices[index+1:]...)
-		realLength--
+	if n != len(shards) {
+		for i := 0; i < length; i++ {
+			validIndices = append(validIndices, i)
+		}
+		realLength := int64(length)
+		for i := 0; i < n; i++ {
+			index := datastor.RandShardIndex(realLength)
+			validIndices = append(validIndices[:index], validIndices[index+1:]...)
+			realLength--
+		}
 	}
 
+	fmt.Println("len(validIndices) = ", len(validIndices))
 	// invalidate the shards, which have non-valid indices
 	for i, shardID := range shards {
 		if len(validIndices) > 0 && validIndices[0] == i {
