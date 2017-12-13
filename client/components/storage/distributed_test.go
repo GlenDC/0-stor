@@ -16,12 +16,13 @@ func TestNewDistributedStoragePanics(t *testing.T) {
 	require.Panics(t, func() {
 		NewDistributedObjectStorage(nil, 1, 1, -1)
 	}, "no cluster given given")
-	require.Panics(t, func() {
-		NewDistributedObjectStorage(dummyCluster{}, 0, 1, -1)
-	}, "no valid k (data shard count) given")
-	require.Panics(t, func() {
-		NewDistributedObjectStorage(dummyCluster{}, 1, 0, -1)
-	}, "no valid m (parity shard count) given")
+}
+
+func TestNewDistributedStorageErrors(t *testing.T) {
+	_, err := NewDistributedObjectStorage(dummyCluster{}, 0, 1, -1)
+	require.Error(t, err, "no valid k (data shard count) given")
+	_, err = NewDistributedObjectStorage(dummyCluster{}, 1, 0, -1)
+	require.Error(t, err, "no valid m (parity shard count) given")
 }
 
 func TestDistributedStorageReadCheckWrite(t *testing.T) {
@@ -284,21 +285,15 @@ func invalidateShards(t *testing.T, shards []string, n int, key []byte, cluster 
 	}
 }
 
-func TestReedSolomonEncoderDecoderPanics(t *testing.T) {
-	require := require.New(t)
-
-	require.Panics(func() {
-		NewReedSolomonEncoderDecoder(0, 1)
-	}, "k is too small")
-	require.Panics(func() {
-		NewReedSolomonEncoderDecoder(1, 0)
-	}, "m is too small")
-}
-
 func TestReedSolomonEncoderDecoderErrors(t *testing.T) {
 	require := require.New(t)
 
 	_, err := NewReedSolomonEncoderDecoder(0, 1)
+	require.Error(err, "k is too small")
+	_, err = NewReedSolomonEncoderDecoder(1, 0)
+	require.Error(err, "m is too small")
+
+	_, err = NewReedSolomonEncoderDecoder(0, 1)
 	require.Error(err, "k is too small")
 	_, err = NewReedSolomonEncoderDecoder(1, 0)
 	require.Error(err, "m is too small")
