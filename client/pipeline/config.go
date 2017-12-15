@@ -1,9 +1,155 @@
 package pipeline
 
 import (
+	"errors"
+	"runtime"
+
+	"github.com/zero-os/0-stor/client/datastor"
+
 	"github.com/zero-os/0-stor/client/components/crypto"
-	"github.com/zero-os/0-stor/client/components/pipeline/processing"
+	"github.com/zero-os/0-stor/client/components/storage"
+	"github.com/zero-os/0-stor/client/pipeline/processing"
 )
+
+var (
+	// DefaultJobCount is the JobCount,
+	// while creating a config-based pipeline, in case a jobCount lower than 1 is given.
+	DefaultJobCount = runtime.NumCPU() * 2
+)
+
+// TODO:
+//   + Remove Close from storage.ObjectStorage and remove Close from cluster interface
+//   + define new ClusterCloser interface, which will only be used for client code
+//   + revive old distribution component code
+//   + make all unit tests pass again
+//   + add pipeline unit tests (test all different production-like pipeline combinations),
+//     using a config-based creation
+//   + improve error code
+//   + push pipeline code as it is, non-implemented
+//   + refactor all packages and integrate pipeline code into client + client-config, such that we have:
+//          + client/pipeline <- { /processing, /storage, /crypto }
+//          + remove entire components package
+//          + integrate new client config into zstor (command-line) client
+//          + ensure all unit tests pass
+//  + finish PR (has 2 commits)
+//
+// ... once this is all done, we can improve the API of the 0-stor main client,
+// and after that the hard work is done. than it's just some polishing,
+// and add missing unit tests where needed.
+func NewPipeline(cfg Config, cluster datastor.Cluster, jobCount int) (Pipeline, error) {
+	if cluster == nil {
+		panic("no datastor cluster given")
+	}
+	// create processor constructor
+	var (
+		err error
+		pc  ProcessorConstructor
+	)
+	if cfg.Compression.Mode != processing.CompressionModeDisabled {
+		pc = func() (processing.Processor, error) {
+			return processing.NewCompressorDecompressor(
+				cfg.Compression.Type,
+				cfg.Compression.Mode)
+		}
+	}
+	if len(cfg.Encryption.PrivateKey) != 0 {
+		if pc == nil {
+			// only use encryption
+			pc = func() (processing.Processor, error) {
+				return processing.NewEncrypterDecrypter(
+					cfg.Encryption.Type,
+					cfg.Encryption.PrivateKey)
+			}
+		} else {
+			// use compression and encryption
+			pc = func() (processing.Processor, error) {
+				cd, err := pc()
+				if err != nil {
+					return nil, err
+				}
+				ed, err := processing.NewEncrypterDecrypter(
+					cfg.Encryption.Type,
+					cfg.Encryption.PrivateKey)
+				if err != nil {
+					return nil, err
+				}
+				return processing.NewProcessorChain([]processing.Processor{cd, ed}), nil
+			}
+		}
+	}
+	if pc == nil {
+		// no processor used, default to the NopProcessor
+		pc = func() (processing.Processor, error) { return processing.NopProcessor{}, nil }
+	}
+	// test our processor constructor, so we know for sure it works
+	_, err = pc()
+	if err != nil {
+		return nil, err
+	}
+
+	// default job count if needed
+	if jobCount <= 0 {
+		jobCount = DefaultJobCount
+	}
+
+	// create storage
+	var os storage.ObjectStorage
+	if cfg.Distribution.DataShardCount <= 0 {
+		if cfg.Distribution.ParityShardCount >= 0 {
+			return nil, errors.New("illegal distribution: parity shard count defined, " +
+				"while data shard count is undefined")
+		}
+
+		// use a non-distributed, random storage
+		os, err = storage.NewRandomObjectStorage(cluster)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if cfg.Distribution.ParityShardCount <= 0 {
+			// use a replication storage
+			os, err = storage.NewReplicatedObjectStorage(
+				cluster, cfg.Distribution.DataShardCount, jobCount)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			// use a distribution (erasure code) storage
+			os, err = storage.NewDistributedObjectStorage(
+				cluster,
+				cfg.Distribution.DataShardCount, cfg.Distribution.ParityShardCount,
+				jobCount)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// create the hasher constructor
+	hashPrivateKey := cfg.Hashing.PrivateKey
+	if len(hashPrivateKey) == 0 {
+		hashPrivateKey = cfg.Encryption.PrivateKey
+	}
+	hc := func() (crypto.Hasher, error) {
+		return crypto.NewHasher(
+			cfg.Hashing.Type,
+			hashPrivateKey,
+		)
+	}
+	// test our counter, so we know for sure it works
+	_, err = hc()
+	if err != nil {
+		return nil, err
+	}
+
+	// return a sequential pipeline
+	if cfg.ChunkSize <= 0 {
+		return NewSingleObjectPipeline(hc, pc, os), nil
+	}
+
+	// return a async splitter pipeline
+	return NewAsyncSplitterPipeline(hc, pc, os, cfg.ChunkSize, jobCount), nil
+}
 
 // Config is used to configure and create a pipeline.
 // While a pipeline can be manually created,
@@ -26,6 +172,12 @@ import (
 // This is definitely the case in case you lose any credentials,
 // such as a private key used for encryption (and hashing).
 type Config struct {
+	// ChunkSize defines the size of chunks,
+	// all the to be written objects should be split into.
+	// If the ChunkSize has a value of 0 or lower, no object will be split
+	// into multiple objects prior to writing.
+	ChunkSize int
+
 	// Hashing can not be disabled, as it is an essential part of the pipeline.
 	// The keys of all stored blocks (in zstordb), are generated and
 	// are equal to the checksum/signature of that block's (binary) data.
@@ -113,7 +265,7 @@ type Config struct {
 		//
 		// This key will also used by the crypto-hashing algorithm given,
 		// if you did not define a separate key within the hashing configuration.
-		PrivateKey string `json:"private_key" yaml:"private_key"`
+		PrivateKey []byte `json:"private_key" yaml:"private_key"`
 
 		// The type of encryption algorithm to use,
 		// defining both the encrypting and decrypting logic.
@@ -131,6 +283,11 @@ type Config struct {
 		// you'll be able to use that encrypter-decrypting, by providing its (stringified) type here.
 		Type processing.EncryptionType `json:"type" yaml:"yaml"`
 	} `json:"encryption" yaml:"encryption"`
+
+	// Shards defines the list of zstordb servers, used as a single cluster.
+	//
+	// At least Distribution.DataShardCount+Distribution.ParityShardCount is required
+	Shards []string `json:"shards" yaml:"shards"`
 
 	// Distribution defines how all blocks should-be/are distributed.
 	// These properties are optional, and when not given,

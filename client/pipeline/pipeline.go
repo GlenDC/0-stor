@@ -4,8 +4,8 @@ import (
 	"io"
 
 	"github.com/zero-os/0-stor/client/components/crypto"
-	"github.com/zero-os/0-stor/client/components/pipeline/processing"
 	"github.com/zero-os/0-stor/client/metastor"
+	"github.com/zero-os/0-stor/client/pipeline/processing"
 )
 
 // Pipeline ...TODO: desc

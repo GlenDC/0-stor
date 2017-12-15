@@ -15,6 +15,10 @@ import (
 // using the given Cluster and default ReedSolomonEncoderDecoder as internal DistributedEncoderDecoder.
 // See `DistributedObjectStorage` `DistributedEncoderDecoder` for more information.
 func NewDistributedObjectStorage(cluster datastor.Cluster, k, m, jobCount int) (*DistributedObjectStorage, error) {
+	if cluster.ListedShardCount() < k+m {
+		return nil, errors.New("ReplicatedObjectStorage requires " +
+			"at least k+m amount of listed datastor shards")
+	}
 	dec, err := NewReedSolomonEncoderDecoder(k, m)
 	if err != nil {
 		return nil, err

@@ -1,17 +1,22 @@
 package storage
 
 import (
+	"errors"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/zero-os/0-stor/client/datastor"
 )
 
 // NewRandomObjectStorage creates a new RandomObjectStorage.
 // See `RandomObjectStorage` for more information.
-func NewRandomObjectStorage(cluster datastor.Cluster) *RandomObjectStorage {
+func NewRandomObjectStorage(cluster datastor.Cluster) (*RandomObjectStorage, error) {
 	if cluster == nil {
 		panic("no cluster given")
 	}
-	return &RandomObjectStorage{cluster: cluster}
+	if cluster.ListedShardCount() < 1 {
+		return nil, errors.New("RandomObjectStorage: at least one listed shard is required")
+	}
+	return &RandomObjectStorage{cluster: cluster}, nil
 }
 
 // RandomObjectStorage is the most simplest Storage implementation.

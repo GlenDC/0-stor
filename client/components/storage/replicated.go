@@ -15,12 +15,17 @@ import (
 // See `ReplicatedObjectStorage` for more information.
 //
 // jobCount is optional and can be `<= 0` in order to use DefaultJobCount.
-func NewReplicatedObjectStorage(cluster datastor.Cluster, replicationNr, jobCount int) *ReplicatedObjectStorage {
+func NewReplicatedObjectStorage(cluster datastor.Cluster, replicationNr, jobCount int) (*ReplicatedObjectStorage, error) {
 	if cluster == nil {
 		panic("no cluster given")
 	}
 	if replicationNr < 1 {
 		panic("replicationNr has to be at least 1")
+	}
+
+	if cluster.ListedShardCount() < replicationNr {
+		return nil, errors.New("ReplicatedObjectStorage requires " +
+			"at least replicationNr amount of listed datastor shards")
 	}
 
 	if jobCount < 1 {
@@ -36,7 +41,7 @@ func NewReplicatedObjectStorage(cluster datastor.Cluster, replicationNr, jobCoun
 		replicationNr: replicationNr,
 		jobCount:      jobCount,
 		writeJobCount: writeJobCount,
-	}
+	}, nil
 }
 
 // ReplicatedObjectStorage defines a storage implementation,

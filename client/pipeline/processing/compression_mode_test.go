@@ -68,7 +68,7 @@ func TestCompressionModeUnmarshal(t *testing.T) {
 		{"best_compression", CompressionModeBestCompression, false},
 		{"Best_Compression", CompressionModeBestCompression, false},
 		{"BEST_COMPRESSION", CompressionModeBestCompression, false},
-		{"", CompressionModeDefault, false},
+		{"", CompressionModeDisabled, false},
 		{"foo", math.MaxUint8, true},
 	}
 	for _, tc := range testCases {
@@ -76,7 +76,7 @@ func TestCompressionModeUnmarshal(t *testing.T) {
 		err := o.UnmarshalText([]byte(tc.String))
 		if tc.Err {
 			require.Error(err)
-			require.Equal(CompressionModeDefault, o)
+			require.Equal(CompressionModeDisabled, o)
 		} else {
 			require.NoError(err)
 			require.Equal(tc.Expected, o)

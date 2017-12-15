@@ -46,6 +46,9 @@ type Cluster interface {
 	// which are part of that exceptShards slice.
 	GetRandomShardIterator(exceptShards []string) ShardIterator
 
+	// ListedShardCount returns the amount of listed shards available in this cluster.
+	ListedShardCount() int
+
 	// Close will panic,
 	// if there is still a reference to a pooled client.
 	Close() error

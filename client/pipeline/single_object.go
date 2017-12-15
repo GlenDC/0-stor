@@ -11,6 +11,23 @@ import (
 	"github.com/zero-os/0-stor/client/metastor"
 )
 
+func NewSingleObjectPipeline(hc HasherConstructor, pc ProcessorConstructor, os storage.ObjectStorage) *SingleObjectPipeline {
+	if hc == nil {
+		panic("no HasherConstructor given")
+	}
+	if pc == nil {
+		panic("no ProcessorConstructor given")
+	}
+	if os == nil {
+		panic("no ObjectStorage given")
+	}
+	return &SingleObjectPipeline{
+		hasher:    hc,
+		processor: pc,
+		storage:   os,
+	}
+}
+
 // SingleObjectPipeline ...TODO: add description
 type SingleObjectPipeline struct {
 	hasher    HasherConstructor

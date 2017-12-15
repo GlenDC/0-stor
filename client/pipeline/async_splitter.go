@@ -15,6 +15,33 @@ import (
 	"github.com/zero-os/0-stor/client/metastor"
 )
 
+func NewAsyncSplitterPipeline(hc HasherConstructor, pc ProcessorConstructor, os storage.ObjectStorage, chunkSize, jobCount int) *AsyncSplitterPipeline {
+	if hc == nil {
+		panic("no HasherConstructor given")
+	}
+	if pc == nil {
+		panic("no ProcessorConstructor given")
+	}
+	if os == nil {
+		panic("no ObjectStorage given")
+	}
+	if chunkSize <= 0 {
+		panic("chunk size has to be positive")
+	}
+	if jobCount <= 0 {
+		jobCount = DefaultJobCount
+	}
+	storageJobCount := jobCount * 2
+	return &AsyncSplitterPipeline{
+		hasher:            hc,
+		processor:         pc,
+		storage:           os,
+		storageJobCount:   storageJobCount,
+		processorJobCount: jobCount,
+		chunkSize:         chunkSize,
+	}
+}
+
 // AsyncSplitterPipeline ...TODO: add description
 type AsyncSplitterPipeline struct {
 	hasher                             HasherConstructor
