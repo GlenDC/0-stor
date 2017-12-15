@@ -115,6 +115,16 @@ func (asp *AsyncSplitterPipeline) Write(r io.Reader, refList []string) ([]metast
 					return err
 				}
 				key := hasher.HashBytes(data)
+
+				// ensure to copy the data,
+				// in case the used processor is sharing
+				// the buffer between sequential write processes
+				if processor.SharedWriteBuffer() {
+					b := make([]byte, len(data))
+					copy(b, data)
+					data = b
+				}
+
 				select {
 				case objectCh <- indexedObject{input.Index, key, data}:
 				case <-ctx.Done():
@@ -412,6 +422,16 @@ func (asp *AsyncSplitterPipeline) Read(chunks []metastor.Chunk, w io.Writer) (re
 				if bytes.Compare(input.Key, hasher.HashBytes(data)) != 0 {
 					return fmt.Errorf("object chunk #%d's data and key do not match", input.Index)
 				}
+
+				// ensure to copy the data,
+				// in case the used processor is sharing
+				// the buffer between sequential read processes
+				if processor.SharedReadBuffer() {
+					b := make([]byte, len(data))
+					copy(b, data)
+					data = b
+				}
+
 				result := indexedData{
 					Index:     input.Index,
 					DataChunk: data,
