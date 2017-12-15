@@ -38,9 +38,9 @@ func NewAESEncrypterDecrypter(privateKey []byte) (*AESEncrypterDecrypter, error)
 
 	nonceSize := gcm.NonceSize()
 	return &AESEncrypterDecrypter{
-		gcm:       gcm,
-		nonce:     make([]byte, nonceSize),
-		nonceSize: nonceSize,
+		gcm:            gcm,
+		nonceSize:      nonceSize,
+		cipherOverhead: nonceSize + gcm.Overhead(),
 	}, nil
 }
 
@@ -59,33 +59,43 @@ func NewAESEncrypterDecrypter(privateKey []byte) (*AESEncrypterDecrypter, error)
 // When giving a key of a size other than these 3,
 // NewAESEncrypterDecrypter will return an error.
 type AESEncrypterDecrypter struct {
-	gcm       cipher.AEAD
-	nonce     []byte
-	nonceSize int
+	gcm                     cipher.AEAD
+	readBuffer, writeBuffer []byte
+	nonceSize               int
+	cipherOverhead          int
 }
 
 // WriteProcess implements Processor.WriteProcess
 func (ed *AESEncrypterDecrypter) WriteProcess(plain []byte) (cipher []byte, err error) {
-	_, err = io.ReadFull(rand.Reader, ed.nonce)
+	size := len(plain) + ed.cipherOverhead
+	if size > len(ed.writeBuffer) {
+		ed.writeBuffer = make([]byte, size)
+	}
+	_, err = io.ReadFull(rand.Reader, ed.writeBuffer[:ed.nonceSize])
 	if err != nil {
 		return nil, err
 	}
-	return ed.gcm.Seal(ed.nonce, ed.nonce, plain, nil), nil
+	nonce := ed.writeBuffer[:ed.nonceSize]
+	return ed.gcm.Seal(nonce, nonce, plain, nil), nil
 }
 
 // ReadProcess implements Processor.ReadProcess
 func (ed *AESEncrypterDecrypter) ReadProcess(cipher []byte) (plain []byte, err error) {
-	if len(cipher) <= ed.nonceSize {
+	size := len(cipher)
+	if size > len(ed.readBuffer) {
+		ed.readBuffer = make([]byte, size)
+	}
+	if size <= ed.nonceSize {
 		return nil, errors.New("malformed ciphertext")
 	}
-	return ed.gcm.Open(nil, cipher[:ed.nonceSize], cipher[ed.nonceSize:], nil)
+	return ed.gcm.Open(ed.readBuffer[:0], cipher[:ed.nonceSize], cipher[ed.nonceSize:], nil)
 }
 
 // SharedWriteBuffer implements Processor.SharedWriteBuffer
-func (ed *AESEncrypterDecrypter) SharedWriteBuffer() bool { return false }
+func (ed *AESEncrypterDecrypter) SharedWriteBuffer() bool { return true }
 
 // SharedReadBuffer implements Processor.SharedReadBuffer
-func (ed *AESEncrypterDecrypter) SharedReadBuffer() bool { return false }
+func (ed *AESEncrypterDecrypter) SharedReadBuffer() bool { return true }
 
 var (
 	_ Processor = (*AESEncrypterDecrypter)(nil)

@@ -49,9 +49,9 @@ func (fpp fooPrefixProcessor) ReadProcess(data []byte) ([]byte, error) {
 	return bytes.TrimPrefix(data, []byte("foo_")), nil
 }
 
-func (fpp fooPrefixProcessor) SharedWriteBuffer() bool { return false }
+func (fpp fooPrefixProcessor) SharedWriteBuffer() bool { return true }
 
-func (fpp fooPrefixProcessor) SharedReadBuffer() bool { return false }
+func (fpp fooPrefixProcessor) SharedReadBuffer() bool { return true }
 
 func TestFooPrefixProcessor_ReadWrite(t *testing.T) {
 	testProcessorReadWrite(t, fooPrefixProcessor{})
@@ -101,6 +101,397 @@ func TestNewProcessorChain(t *testing.T) {
 	require.Empty(data)
 }
 
+type pcc func(t *testing.T) Processor
+
+var processorChainTestcases = []struct {
+	Name        string
+	Constructor pcc
+}{
+	// some initial test cases,
+	// using just dev/test processors,
+	// should already tell us if the chain works
+	{"nop<->nop", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			NopProcessor{},
+			NopProcessor{},
+		})
+	}},
+	{"nop<->fooPrefix", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			NopProcessor{},
+			fooPrefixProcessor{},
+		})
+	}},
+	{"fooPrefix<->nop", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			fooPrefixProcessor{},
+			NopProcessor{},
+		})
+	}},
+	{"fooPrefix<->fooPrefix", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			fooPrefixProcessor{},
+			fooPrefixProcessor{},
+		})
+	}},
+	{"nop<->nop<->nop", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			NopProcessor{},
+			NopProcessor{},
+			NopProcessor{},
+		})
+	}},
+	{"fooPrefix<->fooPrefix<->fooPrefix", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			fooPrefixProcessor{},
+			fooPrefixProcessor{},
+			fooPrefixProcessor{},
+		})
+	}},
+	{"fooPrefix<->nop<->fooPrefix", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			fooPrefixProcessor{},
+			NopProcessor{},
+			fooPrefixProcessor{},
+		})
+	}},
+	{"nop<->fooPrefix<->nop", func(t *testing.T) Processor {
+		return NewProcessorChain([]Processor{
+			NopProcessor{},
+			fooPrefixProcessor{},
+			NopProcessor{},
+		})
+	}},
+
+	// some more interesting processor chains
+	{"fooPrefix<->compression:snappy", func(t *testing.T) Processor {
+		cd, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd)
+
+		return NewProcessorChain([]Processor{
+			fooPrefixProcessor{},
+			cd,
+		})
+	}},
+	{"compression:snappy<->fooPrefix", func(t *testing.T) Processor {
+		cd, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd)
+
+		return NewProcessorChain([]Processor{
+			cd,
+			fooPrefixProcessor{},
+		})
+	}},
+	{"fooPrefix<->compression:snappy<->fooPrefix", func(t *testing.T) Processor {
+		cd, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd)
+
+		return NewProcessorChain([]Processor{
+			fooPrefixProcessor{},
+			cd,
+			fooPrefixProcessor{},
+		})
+	}},
+	{"compression:snappy<->fooPrefix<->compression:snappy", func(t *testing.T) Processor {
+		cd1, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd1)
+		cd2, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd2)
+
+		return NewProcessorChain([]Processor{
+			cd1,
+			fooPrefixProcessor{},
+			cd2,
+		})
+	}},
+
+	// let's do some weird combinations, with multiple compressors
+	{"compression:snappy<->compression:snappy", func(t *testing.T) Processor {
+		cd1, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd1)
+		cd2, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd2)
+
+		return NewProcessorChain([]Processor{
+			cd1,
+			cd2,
+		})
+	}},
+	{"compression:snappy<->compression:LZ4", func(t *testing.T) Processor {
+		cd1, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd1)
+		cd2, err := NewLZ4CompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd2)
+
+		return NewProcessorChain([]Processor{
+			cd1,
+			cd2,
+		})
+	}},
+	{"compression:LZ4<->compression:Snappy", func(t *testing.T) Processor {
+		cd1, err := NewLZ4CompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd1)
+		cd2, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd2)
+
+		return NewProcessorChain([]Processor{
+			cd1,
+			cd2,
+		})
+	}},
+	{"compression:Snappy<->compression:LZ4<->compression:GZip", func(t *testing.T) Processor {
+		cd1, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd1)
+		cd2, err := NewLZ4CompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd2)
+		cd3, err := NewGZipCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd3)
+
+		return NewProcessorChain([]Processor{
+			cd1,
+			cd2,
+			cd3,
+		})
+	}},
+	{"compression:GZip<->compression:LZ4<->compression:Snappy", func(t *testing.T) Processor {
+		cd1, err := NewGZipCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd1)
+		cd2, err := NewLZ4CompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd2)
+		cd3, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+		require.NoError(t, err)
+		require.NotNil(t, cd3)
+
+		return NewProcessorChain([]Processor{
+			cd1,
+			cd2,
+			cd3,
+		})
+	}},
+	{"fooPrefix<->encryption:aes_256", func() pcc {
+		key := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				fooPrefixProcessor{},
+				ed,
+			})
+		}
+	}()},
+	{"encryption:aes_256<->fooPrefix", func() pcc {
+		key := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				ed,
+				fooPrefixProcessor{},
+			})
+		}
+	}()},
+	{"fooPrefix<->encryption:aes_256<->fooPrefix", func() pcc {
+		key := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				fooPrefixProcessor{},
+				ed,
+				fooPrefixProcessor{},
+			})
+		}
+	}()},
+
+	// let's do some weird combinations, simply chaining AES encryption
+	{"encryption:aes_256<->encryption:aes_256", func() pcc {
+		key1 := []byte(randomString(32))
+		key2 := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			ed1, err := NewAESEncrypterDecrypter(key1)
+			require.NoError(t, err)
+			require.NotNil(t, ed1)
+			ed2, err := NewAESEncrypterDecrypter(key2)
+			require.NoError(t, err)
+			require.NotNil(t, ed2)
+
+			return NewProcessorChain([]Processor{
+				ed1,
+				ed2,
+			})
+		}
+	}()},
+	{"encryption:aes_128<->encryption:aes_196<->encryption:aes_256", func() pcc {
+		key1 := []byte(randomString(16))
+		key2 := []byte(randomString(24))
+		key3 := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			ed1, err := NewAESEncrypterDecrypter(key1)
+			require.NoError(t, err)
+			require.NotNil(t, ed1)
+			ed2, err := NewAESEncrypterDecrypter(key2)
+			require.NoError(t, err)
+			require.NotNil(t, ed2)
+			ed3, err := NewAESEncrypterDecrypter(key3)
+			require.NoError(t, err)
+			require.NotNil(t, ed3)
+
+			return NewProcessorChain([]Processor{
+				ed1,
+				ed2,
+				ed3,
+			})
+		}
+	}()},
+
+	// Production-like processor chains (as used in the pipeline code)
+	{"compression:Snappy<->encryption:aes_256", func() pcc {
+		key := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			cd, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+			require.NoError(t, err)
+			require.NotNil(t, cd)
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				cd,
+				ed,
+			})
+		}
+	}()},
+	{"compression:LZ4<->encryption:aes_256", func() pcc {
+		key := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			cd, err := NewLZ4CompressorDecompressor(CompressionModeDefault)
+			require.NoError(t, err)
+			require.NotNil(t, cd)
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				cd,
+				ed,
+			})
+		}
+	}()},
+	{"compression:GZip<->encryption:aes_256", func() pcc {
+		key := []byte(randomString(32))
+		return func(t *testing.T) Processor {
+			cd, err := NewGZipCompressorDecompressor(CompressionModeDefault)
+			require.NoError(t, err)
+			require.NotNil(t, cd)
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				cd,
+				ed,
+			})
+		}
+	}()}, {"compression:Snappy<->encryption:aes_128", func() pcc {
+		key := []byte(randomString(16))
+		return func(t *testing.T) Processor {
+			cd, err := NewSnappyCompressorDecompressor(CompressionModeDefault)
+			require.NoError(t, err)
+			require.NotNil(t, cd)
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				cd,
+				ed,
+			})
+		}
+	}()},
+	{"compression:LZ4<->encryption:aes_128", func() pcc {
+		key := []byte(randomString(16))
+		return func(t *testing.T) Processor {
+			cd, err := NewLZ4CompressorDecompressor(CompressionModeDefault)
+			require.NoError(t, err)
+			require.NotNil(t, cd)
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				cd,
+				ed,
+			})
+		}
+	}()},
+	{"compression:GZip<->encryption:aes_128", func() pcc {
+		key := []byte(randomString(16))
+		return func(t *testing.T) Processor {
+			cd, err := NewGZipCompressorDecompressor(CompressionModeDefault)
+			require.NoError(t, err)
+			require.NotNil(t, cd)
+			ed, err := NewAESEncrypterDecrypter(key)
+			require.NoError(t, err)
+			require.NotNil(t, ed)
+
+			return NewProcessorChain([]Processor{
+				cd,
+				ed,
+			})
+		}
+	}()},
+}
+
+func TestProcessorChain_ReadWrite(t *testing.T) {
+	for _, testCase := range processorChainTestcases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			chain := testCase.Constructor(t)
+			testProcessorReadWrite(t, chain)
+		})
+	}
+}
+
+func TestProcessorChain_ReadWrite_MultiLayer(t *testing.T) {
+	for _, testCase := range processorChainTestcases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			chain := testCase.Constructor(t)
+			testProcessorReadWriteMultiLayer(t, chain)
+		})
+	}
+}
+
+func TestProcessorChain_ReadWrite_Async(t *testing.T) {
+	for _, testCase := range processorChainTestcases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			testProcessorReadWriteAsync(t, func() Processor {
+				return testCase.Constructor(t)
+			})
+		})
+	}
+}
+
 func testProcessorReadWrite(t *testing.T, processor Processor) {
 	t.Run("fixed-test-cases", func(t *testing.T) {
 		testCases := []string{
@@ -116,7 +507,7 @@ func testProcessorReadWrite(t *testing.T, processor Processor) {
 	})
 
 	t.Run("random-test-cases", func(t *testing.T) {
-		for i := 0; i < 64; i++ {
+		for i := 0; i < 8; i++ {
 			inputData := make([]byte, mathRand.Int31n(256)+1)
 			rand.Read(inputData)
 			testProcessorReadWriteCycle(t, processor, inputData)
@@ -151,7 +542,7 @@ func testProcessorReadWriteMultiLayer(t *testing.T, processor Processor) {
 	})
 
 	t.Run("random-test-cases", func(t *testing.T) {
-		for i := 0; i < 64; i++ {
+		for i := 0; i < 8; i++ {
 			inputData := make([]byte, mathRand.Int31n(256)+1)
 			rand.Read(inputData)
 			testProcessorReadWriteMultiLayerCycle(t, processor, inputData)
@@ -160,7 +551,7 @@ func testProcessorReadWriteMultiLayer(t *testing.T, processor Processor) {
 }
 
 func testProcessorReadWriteMultiLayerCycle(t *testing.T, processor Processor, inputData []byte) {
-	for n := 2; n <= 8; n++ {
+	for n := 2; n <= 6; n++ {
 		t.Run(fmt.Sprintf("%d_times", n), func(t *testing.T) {
 			require := require.New(t)
 
@@ -220,7 +611,7 @@ func testProcessorReadWriteAsync(t *testing.T, pc func() Processor) {
 
 	t.Run("random-test-cases", func(t *testing.T) {
 		var testCases [][]byte
-		for i := 0; i < 64; i++ {
+		for i := 0; i < 8; i++ {
 			testCase := make([]byte, mathRand.Int31n(256)+1)
 			rand.Read(testCase)
 			testCases = append(testCases, testCase)
@@ -240,17 +631,17 @@ func testProcessorReadWriteAsyncCycle(t *testing.T, pc func() Processor, inputDa
 		}
 
 		processedPackage struct {
-			inputIndex int
-			dataStr    string
-			dataSlice  []byte
+			inputIndex    int
+			dataSliceCopy []byte
+			dataSlice     []byte
 		}
 
 		outputPackage struct {
-			inputIndex      int
-			dataStr         string
-			dataSlice       []byte
-			outputDataStr   string
-			outputDataSlice []byte
+			inputIndex          int
+			dataSliceCopy       []byte
+			dataSlice           []byte
+			outputDataSliceCopy []byte
+			outputDataSlice     []byte
 		}
 	)
 
@@ -260,7 +651,7 @@ func testProcessorReadWriteAsyncCycle(t *testing.T, pc func() Processor, inputDa
 		defer close(inputCh)
 		for index := 0; index < inputLength; index++ {
 			select {
-			case inputCh <- inputPackage{inputIndex: index}:
+			case inputCh <- inputPackage{index}:
 			case <-ctx.Done():
 				return nil
 			}
@@ -283,8 +674,9 @@ func testProcessorReadWriteAsyncCycle(t *testing.T, pc func() Processor, inputDa
 
 			pkg := processedPackage{
 				inputIndex: input.inputIndex,
-				dataStr:    string(data),
 			}
+			pkg.dataSliceCopy = make([]byte, len(data))
+			copy(pkg.dataSliceCopy, data)
 
 			if writeProcessor.SharedWriteBuffer() {
 				pkg.dataSlice = make([]byte, len(data))
@@ -308,14 +700,12 @@ func testProcessorReadWriteAsyncCycle(t *testing.T, pc func() Processor, inputDa
 	group.Go(func() error {
 		defer close(outputCh)
 		for processed := range processedCh {
-			if bytes.Compare([]byte(processed.dataStr), processed.dataSlice) != 0 {
-				return fmt.Errorf("index %d: dataStr (%s) and dataSlice (%s) not equal any longer)",
-					processed.inputIndex, processed.dataStr, processed.dataSlice)
+			if bytes.Compare(processed.dataSliceCopy, processed.dataSlice) != 0 {
+				return fmt.Errorf("index %d: dataSliceCopy (%s) and dataSlice (%s) not equal any longer)",
+					processed.inputIndex, processed.dataSliceCopy, processed.dataSlice)
 			}
 
-			data := []byte(processed.dataStr)
-
-			outputData, err := readProcessor.ReadProcess(data)
+			outputData, err := readProcessor.ReadProcess(processed.dataSliceCopy)
 			if err != nil {
 				return err
 			}
@@ -328,10 +718,11 @@ func testProcessorReadWriteAsyncCycle(t *testing.T, pc func() Processor, inputDa
 
 			pkg := outputPackage{
 				inputIndex:    processed.inputIndex,
-				dataStr:       processed.dataStr,
+				dataSliceCopy: processed.dataSliceCopy,
 				dataSlice:     processed.dataSlice,
-				outputDataStr: string(outputData),
 			}
+			pkg.outputDataSliceCopy = make([]byte, len(outputData))
+			copy(pkg.outputDataSliceCopy, outputData)
 
 			if readProcessor.SharedWriteBuffer() {
 				pkg.outputDataSlice = make([]byte, len(outputData))
@@ -352,14 +743,14 @@ func testProcessorReadWriteAsyncCycle(t *testing.T, pc func() Processor, inputDa
 	// start a goroutine, simply to validate the final output of all received input
 	group.Go(func() error {
 		for output := range outputCh {
-			if bytes.Compare([]byte(output.dataStr), output.dataSlice) != 0 {
-				return fmt.Errorf("index %d: dataStr (%s) and dataSlice (%s) not equal any longer)",
-					output.inputIndex, output.dataStr, output.dataSlice)
+			if bytes.Compare(output.dataSliceCopy, output.dataSlice) != 0 {
+				return fmt.Errorf("index %d: dataSliceCopy (%s) and dataSlice (%s) not equal any longer)",
+					output.inputIndex, output.dataSliceCopy, output.dataSlice)
 			}
 
-			if bytes.Compare([]byte(output.outputDataStr), output.outputDataSlice) != 0 {
-				return fmt.Errorf("index %d: outputDataStr (%s) and outputDataSlice (%s) not equal any longer)",
-					output.inputIndex, output.outputDataStr, output.outputDataSlice)
+			if bytes.Compare(output.outputDataSliceCopy, output.outputDataSlice) != 0 {
+				return fmt.Errorf("index %d: outputDataSliceCopy (%s) and outputDataSlice (%s) not equal any longer)",
+					output.inputIndex, output.outputDataSliceCopy, output.outputDataSlice)
 			}
 
 			inputData := inputDataSlice[output.inputIndex]

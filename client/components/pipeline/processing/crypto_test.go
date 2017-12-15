@@ -230,6 +230,90 @@ func TestAESEncrypterDecrypter_ReadWrite_Async(t *testing.T) {
 	})
 }
 
+// A simple test to ensure we can combine 2 AES Encrypter-Decrypter together,
+// not that we're planning to do this, but it should work none the less
+func TestAESEncryptionCombination(t *testing.T) {
+	require := require.New(t)
+
+	ed1, err := NewAESEncrypterDecrypter([]byte(randomString(16)))
+	require.NoError(err)
+	require.NotNil(ed1)
+
+	ed2, err := NewAESEncrypterDecrypter([]byte(randomString(32)))
+	require.NoError(err)
+	require.NotNil(ed2)
+
+	testCases := []string{
+		"a",
+		"foo",
+		"Hello, World!",
+		"大家好",
+		"This... is my finger :)",
+	}
+	for _, testCase := range testCases {
+		inputData := []byte(testCase)
+
+		data, err := ed1.WriteProcess(inputData)
+		require.NoError(err)
+		require.NotEmpty(data)
+
+		data, err = ed2.WriteProcess(data)
+		require.NoError(err)
+		require.NotEmpty(data)
+
+		data, err = ed2.ReadProcess(data)
+		require.NoError(err)
+		require.NotEmpty(data)
+
+		outputData, err := ed1.ReadProcess(data)
+		require.NoError(err)
+		require.NotEmpty(outputData)
+
+		require.Equal(inputData, outputData)
+	}
+}
+
+func TestAESEncryptionCombination_Async(t *testing.T) {
+	require := require.New(t)
+
+	ed1, err := NewAESEncrypterDecrypter([]byte(randomString(16)))
+	require.NoError(err)
+	require.NotNil(ed1)
+
+	ed2, err := NewAESEncrypterDecrypter([]byte(randomString(32)))
+	require.NoError(err)
+	require.NotNil(ed2)
+
+	testCases := []string{
+		"a",
+		"foo",
+		"Hello, World!",
+		"大家好",
+		"This... is my finger :)",
+	}
+	for _, testCase := range testCases {
+		inputData := []byte(testCase)
+
+		data, err := ed1.WriteProcess(inputData)
+		require.NoError(err)
+		require.NotEmpty(data)
+
+		data, err = ed2.WriteProcess(data)
+		require.NoError(err)
+		require.NotEmpty(data)
+
+		data, err = ed2.ReadProcess(data)
+		require.NoError(err)
+		require.NotEmpty(data)
+
+		outputData, err := ed1.ReadProcess(data)
+		require.NoError(err)
+		require.NotEmpty(outputData)
+
+		require.Equal(inputData, outputData)
+	}
+}
+
 func randomString(n int) string {
 	b := make([]byte, n)
 	rand.Read(b)

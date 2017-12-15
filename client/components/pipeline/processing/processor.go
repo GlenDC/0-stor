@@ -82,23 +82,9 @@ func (nop NopProcessor) WriteProcess(data []byte) ([]byte, error) { return data,
 func (nop NopProcessor) ReadProcess(data []byte) ([]byte, error) { return data, nil }
 
 // SharedWriteBuffer implements Processor.SharedWriteBuffer
-//
-// This implementation returns perhaps an unexpected result (the false constant),
-// even though the memory is really shared memory, as it is given by the callee,
-// is however not a memory from a shared internal buffer, and thus it is not a straight lie either.
-// However as this Processor is only meant to be used
-// as part of the Pipeline package of this repository,
-// this is fine, as all we want to avoid is that we allocate memory where it isn't desired.
 func (nop NopProcessor) SharedWriteBuffer() bool { return false }
 
 // SharedReadBuffer implements Processor.SharedReadBuffer
-//
-// This implementation returns perhaps an unexpected result (the false constant),
-// even though the memory is really shared memory, as it is given by the callee,
-// is however not a memory from a shared internal buffer, and thus it is not a straight lie either.
-// However as this Processor is only meant to be used
-// as part of the Pipeline package of this repository,
-// this is fine, as all we want to avoid is that we allocate memory where it isn't desired.
 func (nop NopProcessor) SharedReadBuffer() bool { return false }
 
 // NewProcessorChain creates a new processor chain.
