@@ -100,7 +100,7 @@ func (sop *SingleObjectPipeline) Write(r io.Reader, refList []string) ([]metasto
 //    |                                    +----------------------+ |
 //    | metastor.Chunk +-> storage.Read +--> Processor.Read +     | |
 //    |                                    | Hash/Data Validation | |
-//    |                                    +---------------------+  |
+//    |                                    +-----------+----------+ |
 //    |                                                |            |
 //    |                                io.Writer <-----+            |
 //    +-------------------------------------------------------------+

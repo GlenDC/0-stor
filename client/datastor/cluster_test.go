@@ -220,8 +220,6 @@ func (sc *stubCluster) filteredSlice(exceptShards []string) []Shard {
 	return filtered
 }
 
-func (sc *stubCluster) Close() error { return nil }
-
 func (ss *stubShard) Identifier() string {
 	return ss.id
 }

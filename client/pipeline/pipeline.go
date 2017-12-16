@@ -9,13 +9,12 @@ import (
 )
 
 // Pipeline ...TODO: desc
+type Pipeline interface {
+	Write(r io.Reader, refList []string) (chunks []metastor.Chunk, err error)
+	Read(chunks []metastor.Chunk, w io.Writer) (refList []string, err error)
+}
+
 type (
-	Pipeline interface {
-		Write(r io.Reader, refList []string) (chunks []metastor.Chunk, err error)
-		Read(chunks []metastor.Chunk, w io.Writer) (refList []string, err error)
-	}
-
-	HasherConstructor func() (crypto.Hasher, error)
-
+	HasherConstructor    func() (crypto.Hasher, error)
 	ProcessorConstructor func() (processing.Processor, error)
 )

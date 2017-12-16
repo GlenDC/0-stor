@@ -89,33 +89,9 @@ func (asp *AsyncSplitterPipeline) Write(r io.Reader, refList []string) ([]metast
 	group, ctx := errgroup.WithContext(context.Background())
 
 	// start the data splitter
-	type indexedData struct {
-		Index int
-		Data  []byte
-	}
-	inputCh := make(chan indexedData, asp.processorJobCount)
-	group.Go(func() error {
-		defer close(inputCh)
-		var index int
-		for {
-			data := make([]byte, asp.chunkSize)
-			n, err := r.Read(data)
-			if err != nil {
-				if err == io.EOF {
-					// we'll concider an EOF
-					// as a signal to let us know the reader is exhausted
-					return nil
-				}
-				return err
-			}
-			select {
-			case inputCh <- indexedData{index, data[:n]}:
-				index++
-			case <-ctx.Done():
-				return nil
-			}
-		}
-	})
+	inputCh, splitter := newAsyncDataSplitter(
+		ctx, r, asp.chunkSize, asp.processorJobCount)
+	group.Go(splitter)
 
 	// start all the processors,
 	// which will also create key, using the hasher
@@ -137,11 +113,14 @@ func (asp *AsyncSplitterPipeline) Write(r io.Reader, refList []string) ([]metast
 		}
 		processorGroup.Go(func() error {
 			for input := range inputCh {
+				// generate the data's key
+				key := hasher.HashBytes(input.Data)
+
+				// process the data
 				data, err := processor.WriteProcess(input.Data)
 				if err != nil {
 					return err
 				}
-				key := hasher.HashBytes(data)
 
 				// ensure to copy the data,
 				// in case the used processor is sharing
@@ -221,7 +200,7 @@ func (asp *AsyncSplitterPipeline) Write(r io.Reader, refList []string) ([]metast
 		// receive all chunks that are send by our storage goroutines
 		for chunk := range chunkCh {
 			// grow the buffer if needed
-			if chunk.Index > bufferSize {
+			if chunk.Index >= bufferSize {
 				bufferSize = chunk.Index + (bufferSize * 2)
 				buf := make([]metastor.Chunk, bufferSize)
 				copy(buf, chunks)
@@ -525,4 +504,38 @@ func (asp *AsyncSplitterPipeline) Read(chunks []metastor.Chunk, w io.Writer) (re
 	// all output has been written successfully,
 	// return the refList (whether it is defined or not)
 	return referenceList, nil
+}
+
+type indexedDataChunk struct {
+	Index int
+	Data  []byte
+}
+
+// newAsyncDataSplitter creates a functional data splitter,
+// which can be used to split streaming input data into fixed-sized chunks,
+// in an asynchronous fashion.
+func newAsyncDataSplitter(ctx context.Context, r io.Reader, chunkSize, bufferSize int) (<-chan indexedDataChunk, func() error) {
+	inputCh := make(chan indexedDataChunk, bufferSize)
+	return inputCh, func() error {
+		defer close(inputCh)
+		var index int
+		for {
+			data := make([]byte, chunkSize)
+			n, err := r.Read(data)
+			if err != nil {
+				if err == io.EOF {
+					// we'll concider an EOF
+					// as a signal to let us know the reader is exhausted
+					return nil
+				}
+				return err
+			}
+			select {
+			case inputCh <- indexedDataChunk{index, data[:n]}:
+				index++
+			case <-ctx.Done():
+				return nil
+			}
+		}
+	}
 }

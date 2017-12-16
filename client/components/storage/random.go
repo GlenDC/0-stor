@@ -99,11 +99,6 @@ func (rs *RandomObjectStorage) Repair(cfg ObjectConfig) (ObjectConfig, error) {
 	return ObjectConfig{}, ErrNotSupported
 }
 
-// Close implements storage.ObjectStorage.Close
-func (rs *RandomObjectStorage) Close() error {
-	return rs.cluster.Close()
-}
-
 var (
 	_ ObjectStorage = (*RandomObjectStorage)(nil)
 )

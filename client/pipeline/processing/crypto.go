@@ -69,7 +69,7 @@ type AESEncrypterDecrypter struct {
 func (ed *AESEncrypterDecrypter) WriteProcess(plain []byte) (cipher []byte, err error) {
 	size := len(plain) + ed.cipherOverhead
 	if size > len(ed.writeBuffer) {
-		ed.writeBuffer = make([]byte, size)
+		ed.writeBuffer = make([]byte, len(ed.writeBuffer)*2+size)
 	}
 	_, err = io.ReadFull(rand.Reader, ed.writeBuffer[:ed.nonceSize])
 	if err != nil {
@@ -83,7 +83,7 @@ func (ed *AESEncrypterDecrypter) WriteProcess(plain []byte) (cipher []byte, err 
 func (ed *AESEncrypterDecrypter) ReadProcess(cipher []byte) (plain []byte, err error) {
 	size := len(cipher)
 	if size > len(ed.readBuffer) {
-		ed.readBuffer = make([]byte, size)
+		ed.readBuffer = make([]byte, len(ed.readBuffer)*2+size)
 	}
 	if size <= ed.nonceSize {
 		return nil, errors.New("malformed ciphertext")
