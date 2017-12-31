@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package client
+package datastor
 
 import (
 	"io/ioutil"
@@ -27,26 +27,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testPrivateKeyPath = "../devcert/jwt_key.pem"
+const testPrivateKeyPath = "../../devcert/jwt_key.pem"
 
-func TestJwtTokenGetterFromIYOClient_Panics(t *testing.T) {
+func TestJwtTokenGetterUsingIYOClient_Panics(t *testing.T) {
 	require := require.New(t)
 
 	require.Panics(func() {
-		jwtTokenGetterFromIYOClient("", nil)
+		JWTTokenGetterUsingIYOClient("", nil)
 	}, "no organization or client given")
 	require.Panics(func() {
-		jwtTokenGetterFromIYOClient("", new(itsyouonline.Client))
+		JWTTokenGetterUsingIYOClient("", new(itsyouonline.Client))
 	}, "no organization given")
 	require.Panics(func() {
-		jwtTokenGetterFromIYOClient("foo", nil)
+		JWTTokenGetterUsingIYOClient("foo", nil)
 	}, "no client given")
 }
 
-func TestIYOJWTTokenGetter_GetLabel(t *testing.T) {
+func TestIYOBasedJWTTokenGetter_GetLabel(t *testing.T) {
 	require := require.New(t)
 
-	jwtTokenGetter := jwtTokenGetterFromIYOClient("foo", new(itsyouonline.Client))
+	jwtTokenGetter := JWTTokenGetterUsingIYOClient("foo", new(itsyouonline.Client))
 	require.NotNil(jwtTokenGetter)
 
 	_, err := jwtTokenGetter.GetLabel("")
@@ -68,8 +68,10 @@ func Test_IYO_JWT_TokenGetter(t *testing.T) {
 	jwtCreator, err := stubs.NewStubIYOClient("testorg", key)
 	require.NoError(err, "failed to create the stub IYO client")
 
-	tg := iyoJWTTokenGetter{client: jwtCreator}
+	tg := IYOBasedJWTTokenGetter{client: jwtCreator}
 	token, err := tg.GetJWTToken("foo")
 	require.NoError(err)
 	require.NotEmpty(token)
 }
+
+// TODO: test JWTTokenCache

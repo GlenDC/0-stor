@@ -102,7 +102,7 @@ func getTestClient(cfg Config) (*Client, datastor.Cluster, error) {
 		var client *itsyouonline.Client
 		client, err = itsyouonline.NewClient(cfg.IYO)
 		if err == nil {
-			tokenGetter := jwtTokenGetterFromIYOClient(
+			tokenGetter := datastor.JWTTokenGetterUsingIYOClient(
 				cfg.IYO.Organization, client)
 			datastorCluster, err = storgrpc.NewCluster(cfg.DataStor.Shards, cfg.Namespace, tokenGetter)
 		}

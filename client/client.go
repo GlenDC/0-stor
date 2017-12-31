@@ -60,9 +60,16 @@ func NewClientFromConfig(cfg Config, jobCount int) (*Client, error) {
 		var client *itsyouonline.Client
 		client, err = itsyouonline.NewClient(cfg.IYO)
 		if err == nil {
-			tokenGetter := jwtTokenGetterFromIYOClient(
+			var tokenGetter datastor.JWTTokenGetter
+			tokenGetter = datastor.JWTTokenGetterUsingIYOClient(
 				cfg.IYO.Organization, client)
-			datastorCluster, err = storgrpc.NewCluster(cfg.DataStor.Shards, cfg.Namespace, tokenGetter)
+			// turn our JWT Token Getter (backed by IYO)
+			// into a cached version using the default bucket size and count
+			tokenGetter, err = datastor.CachedJWTTokenGetter(tokenGetter, -1, -1)
+			if err == nil {
+				datastorCluster, err = storgrpc.NewCluster(
+					cfg.DataStor.Shards, cfg.Namespace, tokenGetter)
+			}
 		}
 	} else {
 		datastorCluster, err = storgrpc.NewCluster(cfg.DataStor.Shards, cfg.Namespace, nil)
