@@ -32,10 +32,13 @@ var (
 	ErrGRPCNilPermissions   = grpc.Errorf(codes.InvalidArgument, "daemon: permissions are not provided")
 	ErrGRPCNilChunks        = grpc.Errorf(codes.InvalidArgument, "daemon: (meta) chunks are not provided")
 	ErrGRPCInvalidChunkSize = grpc.Errorf(codes.InvalidArgument, "daemon: invalid chunksize (has to be 1 or higher)")
+	ErrGRPCKeyNotFound      = grpc.Errorf(codes.NotFound, "daemon: key is no found")
 	ErrGRPCDataNotRead      = grpc.Errorf(codes.NotFound, "daemon: no data could be read")
+	ErrGRPCDataCorrupted    = grpc.Errorf(codes.DataLoss, "daemon: data is corrupted")
 	ErrGRPCNotSupported     = grpc.Errorf(codes.Unimplemented, "daemon: method not supported")
 	ErrGRPCInvalidFileMode  = grpc.Errorf(codes.Unimplemented, "daemon: file mode not supported")
 	ErrGRPCNoLocalFS        = grpc.Errorf(codes.PermissionDenied, "daemon: local filesystem access not allowed")
+	ErrGRPCPermissionDenied = grpc.Errorf(codes.PermissionDenied, "daemon: JWT token does not permit requested action")
 )
 
 // string to (daemon) server error mapping
@@ -49,10 +52,13 @@ var errStringToError = map[string]error{
 	grpc.ErrorDesc(ErrGRPCNilPermissions):   ErrGRPCNilPermissions,
 	grpc.ErrorDesc(ErrGRPCNilChunks):        ErrGRPCNilChunks,
 	grpc.ErrorDesc(ErrGRPCInvalidChunkSize): ErrGRPCInvalidChunkSize,
+	grpc.ErrorDesc(ErrGRPCKeyNotFound):      ErrGRPCKeyNotFound,
 	grpc.ErrorDesc(ErrGRPCDataNotRead):      ErrGRPCDataNotRead,
+	grpc.ErrorDesc(ErrGRPCDataCorrupted):    ErrGRPCDataCorrupted,
 	grpc.ErrorDesc(ErrGRPCNotSupported):     ErrGRPCNotSupported,
 	grpc.ErrorDesc(ErrGRPCInvalidFileMode):  ErrGRPCInvalidFileMode,
 	grpc.ErrorDesc(ErrGRPCNoLocalFS):        ErrGRPCNoLocalFS,
+	grpc.ErrorDesc(ErrGRPCPermissionDenied): ErrGRPCPermissionDenied,
 }
 
 // (daemon) client-side error
@@ -66,10 +72,13 @@ var (
 	ErrNilPermissions   = Error(ErrGRPCNilPermissions)
 	ErrNilChunks        = Error(ErrGRPCNilChunks)
 	ErrInvalidChunkSize = Error(ErrGRPCInvalidChunkSize)
+	ErrKeyNotFound      = Error(ErrGRPCKeyNotFound)
 	ErrDataNotRead      = Error(ErrGRPCDataNotRead)
+	ErrDataCorrupted    = Error(ErrGRPCDataCorrupted)
 	ErrNotSupported     = Error(ErrGRPCNotSupported)
 	ErrInvalidFileMode  = Error(ErrGRPCInvalidFileMode)
 	ErrNoLocalFS        = Error(ErrGRPCNoLocalFS)
+	ErrPermissionDenied = Error(ErrGRPCPermissionDenied)
 )
 
 // DaemonError defines gRPC server errors.

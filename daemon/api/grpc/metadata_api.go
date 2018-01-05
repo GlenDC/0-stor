@@ -46,7 +46,7 @@ func (service *metadataService) SetMetadata(ctx context.Context, req *pb.SetMeta
 
 	err := service.client.SetMetadata(input)
 	if err != nil {
-		return nil, err
+		return nil, mapMetaStorError(err)
 	}
 	return &pb.SetMetadataResponse{}, nil
 }
@@ -60,7 +60,7 @@ func (service *metadataService) GetMetadata(ctx context.Context, req *pb.GetMeta
 
 	metadata, err := service.client.GetMetadata(key)
 	if err != nil {
-		return nil, err
+		return nil, mapMetaStorError(err)
 	}
 
 	// convert metastor.Metadata into a pb.Metadata structure
@@ -77,7 +77,7 @@ func (service *metadataService) DeleteMetadata(ctx context.Context, req *pb.Dele
 
 	err := service.client.DeleteMetadata(key)
 	if err != nil {
-		return nil, err
+		return nil, mapMetaStorError(err)
 	}
 	return &pb.DeleteMetadataResponse{}, nil
 }

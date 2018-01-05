@@ -19,7 +19,10 @@ package grpc
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
+
+	"github.com/zero-os/0-stor/client/datastor"
 
 	"github.com/zero-os/0-stor/client/metastor"
 	"github.com/zero-os/0-stor/client/pipeline/storage"
@@ -56,13 +59,15 @@ func convertProtoToInMemoryChunkSlice(chunks []pb.Chunk) []metastor.Chunk {
 		chunk.Size = c.GetSizeInBytes()
 		chunk.Hash = c.GetHash()
 		objects := c.GetObjects()
-		if n = len(objects); n > 0 {
-			chunk.Objects = make([]metastor.Object, n)
-			for i, o := range objects {
-				object := &chunk.Objects[i]
-				object.Key = o.GetKey()
-				object.ShardID = o.GetShardID()
-			}
+		n = len(objects)
+		if n == 0 {
+			continue
+		}
+		chunk.Objects = make([]metastor.Object, n)
+		for i, o := range objects {
+			object := &chunk.Objects[i]
+			object.Key = o.GetKey()
+			object.ShardID = o.GetShardID()
 		}
 	}
 	return imChunks
@@ -89,13 +94,15 @@ func convertInMemoryToProtoChunkSlice(chunks []metastor.Chunk) []pb.Chunk {
 		chunk := &protoChunks[i]
 		chunk.SizeInBytes = c.Size
 		chunk.Hash = c.Hash
-		if n = len(c.Objects); n > 0 {
-			chunk.Objects = make([]pb.Object, n)
-			for i, o := range c.Objects {
-				object := &chunk.Objects[i]
-				object.Key = o.Key
-				object.ShardID = o.ShardID
-			}
+		n = len(c.Objects)
+		if n == 0 {
+			continue
+		}
+		chunk.Objects = make([]pb.Object, n)
+		for i, o := range c.Objects {
+			object := &chunk.Objects[i]
+			object.Key = o.Key
+			object.ShardID = o.ShardID
 		}
 	}
 	return protoChunks
@@ -111,19 +118,30 @@ func convertInMemoryToProtoMetadata(metadata metastor.Metadata) *pb.Metadata {
 	}
 }
 
-func convertStorageToProtoCheckStatus(status storage.CheckStatus) pb.CheckStatus {
-	checkStatus, ok := _StorageToProtoCheckStatusMapping[status]
-	if !ok {
-		panic(fmt.Sprintf("unsupported check status: %v", status))
-	}
-	return checkStatus
+var openFileToRead = func(path string) (io.ReadCloser, error) {
+	return os.Open(path)
 }
 
-func openFileToWrite(filePath string, fileMode pb.FileMode, sync bool) (*os.File, error) {
+func openFileToWrite(filePath string, fileMode pb.FileMode, sync bool) (io.WriteCloser, error) {
 	if len(filePath) == 0 {
 		return nil, rpctypes.ErrGRPCNilFilePath
 	}
 
+	flags, err := convertFileModeToSyscallFlags(fileMode)
+	if err != nil {
+		return nil, err
+	}
+	if sync {
+		flags |= os.O_SYNC
+	}
+	return openFile(filePath, flags, 0644)
+}
+
+var openFile = func(path string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+	return os.OpenFile(path, flag, perm)
+}
+
+func convertFileModeToSyscallFlags(fileMode pb.FileMode) (int, error) {
 	flags := os.O_RDWR | os.O_CREATE
 	switch fileMode {
 	case pb.FileModeTruncate:
@@ -133,17 +151,55 @@ func openFileToWrite(filePath string, fileMode pb.FileMode, sync bool) (*os.File
 	case pb.FileModeExclusive:
 		flags |= os.O_EXCL
 	default:
-		return nil, rpctypes.ErrGRPCInvalidFileMode
+		return 0, rpctypes.ErrGRPCInvalidFileMode
 	}
-	if sync {
-		flags |= os.O_SYNC
-	}
+	return flags, nil
+}
 
-	return os.OpenFile(filePath, flags, 0644)
+func convertStorageToProtoCheckStatus(status storage.CheckStatus) pb.CheckStatus {
+	checkStatus, ok := _StorageToProtoCheckStatusMapping[status]
+	if !ok {
+		panic(fmt.Sprintf("unsupported check status: %v", status))
+	}
+	return checkStatus
 }
 
 var _StorageToProtoCheckStatusMapping = map[storage.CheckStatus]pb.CheckStatus{
 	storage.CheckStatusInvalid: pb.CheckStatusInvalid,
 	storage.CheckStatusOptimal: pb.CheckStatusOptimal,
 	storage.CheckStatusValid:   pb.CheckStatusValid,
+}
+
+func mapClientAndMetastorError(err error) error {
+	if cerr, ok := _ErrMetaStorErrorMapping[err]; ok {
+		return cerr
+	}
+	if cerr, ok := _ErrZStorErrorMapping[err]; ok {
+		return cerr
+	}
+	return err
+}
+
+func mapZStorError(err error) error {
+	if cerr, ok := _ErrZStorErrorMapping[err]; ok {
+		return cerr
+	}
+	return err
+}
+
+var _ErrZStorErrorMapping = map[error]error{
+	datastor.ErrKeyNotFound:      rpctypes.ErrGRPCKeyNotFound,
+	datastor.ErrObjectCorrupted:  rpctypes.ErrGRPCDataCorrupted,
+	datastor.ErrPermissionDenied: rpctypes.ErrGRPCPermissionDenied,
+}
+
+func mapMetaStorError(err error) error {
+	if cerr, ok := _ErrMetaStorErrorMapping[err]; ok {
+		return cerr
+	}
+	return err
+}
+
+var _ErrMetaStorErrorMapping = map[error]error{
+	metastor.ErrNotFound: rpctypes.ErrGRPCKeyNotFound,
 }

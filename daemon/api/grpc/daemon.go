@@ -19,6 +19,7 @@ package grpc
 import (
 	"errors"
 	"net"
+	"strings"
 
 	"github.com/zero-os/0-stor/client"
 	"github.com/zero-os/0-stor/client/datastor"
@@ -48,9 +49,9 @@ type Config struct {
 	// required parameters
 	Pipeline   pipeline.Pipeline
 	MetaClient metastor.Client
-	IYOClient  *itsyouonline.Client
 
 	// optional parameters
+	IYOClient            *itsyouonline.Client
 	MaxMsgSize           int
 	DisableLocalFSAccess bool
 }
@@ -61,9 +62,6 @@ func (cfg *Config) validateAndSanitize() error {
 	}
 	if cfg.MetaClient == nil {
 		return errors.New("no metastor client given, while one is required")
-	}
-	if cfg.IYOClient == nil {
-		return errors.New("no IYO client given, while one is required")
 	}
 
 	if cfg.MaxMsgSize <= 0 {
@@ -188,7 +186,11 @@ func New(cfg Config) (*Daemon, error) {
 
 // Serve implements api.Daemon.Serve
 func (d *Daemon) Serve(lis net.Listener) error {
-	return d.grpcServer.Serve(lis)
+	err := d.grpcServer.Serve(lis)
+	if err != nil && !isClosedConnError(err) {
+		return err
+	}
+	return nil
 }
 
 // Close implements api.Daemon.Close
@@ -197,6 +199,18 @@ func (d *Daemon) Close() error {
 	d.grpcServer.GracefulStop()
 	log.Debugln("closing internal resources")
 	return d.closer.Close()
+}
+
+// isClosedConnError returns true if the error is from closing listener, cmux.
+// copied from golang.org/x/net/http2/http2.go
+func isClosedConnError(err error) bool {
+	if err == grpc.ErrServerStopped {
+		return true
+	}
+	// 'use of closed network connection' (Go <=1.8)
+	// 'use of closed file or network connection' (Go >1.8, internal/poll.ErrClosing)
+	// 'mux: listener closed' (cmux.ErrListenerClosed)
+	return strings.Contains(err.Error(), "closed")
 }
 
 var (

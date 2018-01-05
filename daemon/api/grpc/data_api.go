@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 
 	"github.com/zero-os/0-stor/client/metastor"
 	"github.com/zero-os/0-stor/client/pipeline"
@@ -58,7 +57,7 @@ func (service *dataService) Write(ctx context.Context, req *pb.DataWriteRequest)
 	// write the given data
 	chunks, err := service.client.Write(bytes.NewReader(data))
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 
 	protoChunks := convertInMemoryToProtoChunkSlice(chunks)
@@ -81,7 +80,7 @@ func (service *dataService) WriteFile(ctx context.Context, req *pb.DataWriteFile
 	}
 
 	// open the file
-	file, err := os.Open(filePath)
+	file, err := openFileToRead(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func (service *dataService) WriteFile(ctx context.Context, req *pb.DataWriteFile
 	// write the file data
 	chunks, err := service.client.Write(file)
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 
 	protoChunks := convertInMemoryToProtoChunkSlice(chunks)
@@ -116,7 +115,7 @@ func (service *dataService) WriteStream(stream pb.DataService_WriteStreamServer)
 	group.Go(func() error {
 		var err error
 		chunks, err = service.client.Write(reader)
-		return err
+		return mapZStorError(err)
 	})
 
 	// start the reader
@@ -184,7 +183,7 @@ func (service *dataService) Read(ctx context.Context, req *pb.DataReadRequest) (
 	imChunks := convertProtoToInMemoryChunkSlice(chunks)
 	err := service.client.Read(imChunks, buf)
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 	data := buf.Bytes()
 	if len(data) == 0 {
@@ -227,7 +226,7 @@ func (service *dataService) ReadFile(ctx context.Context, req *pb.DataReadFileRe
 	imChunks := convertProtoToInMemoryChunkSlice(chunks)
 	err = service.client.Read(imChunks, file)
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 	return &pb.DataReadFileResponse{}, nil
 }
@@ -260,7 +259,11 @@ func (service *dataService) ReadStream(req *pb.DataReadStreamRequest, stream pb.
 			}
 		}()
 		imChunks := convertProtoToInMemoryChunkSlice(chunks)
-		return service.client.Read(imChunks, writer)
+		err = service.client.Read(imChunks, writer)
+		if err != nil {
+			return mapZStorError(err)
+		}
+		return nil
 	})
 
 	// start reader goroutine
@@ -299,7 +302,7 @@ func (service *dataService) Delete(ctx context.Context, req *pb.DataDeleteReques
 	imChunks := convertProtoToInMemoryChunkSlice(chunks)
 	err := service.client.Delete(imChunks)
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 	return &pb.DataDeleteResponse{}, nil
 }
@@ -314,7 +317,7 @@ func (service *dataService) Check(ctx context.Context, req *pb.DataCheckRequest)
 	imChunks := convertProtoToInMemoryChunkSlice(chunks)
 	status, err := service.client.Check(imChunks, req.GetFast())
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 	protoStatus := convertStorageToProtoCheckStatus(status)
 	return &pb.DataCheckResponse{Status: protoStatus}, nil
@@ -330,7 +333,7 @@ func (service *dataService) Repair(ctx context.Context, req *pb.DataRepairReques
 	imChunks := convertProtoToInMemoryChunkSlice(chunks)
 	imChunks, err := service.client.Repair(imChunks)
 	if err != nil {
-		return nil, err
+		return nil, mapZStorError(err)
 	}
 	protoChunks := convertInMemoryToProtoChunkSlice(imChunks)
 	return &pb.DataRepairResponse{Chunks: protoChunks}, nil
