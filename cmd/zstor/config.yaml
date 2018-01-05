@@ -9,13 +9,10 @@ datastor:
     - 127.0.0.1:12345
     - 127.0.0.1:12346
     - 127.0.0.1:12347
-    - 127.0.0.1:12348
 metastor:
   # the address(es) of an etcd server cluster
   shards:
     - 127.0.0.1:2379
-    - 127.0.0.1:22379
-    - 127.0.0.1:32379
 pipeline:
   block_size: 4096
   compression:
@@ -25,5 +22,5 @@ pipeline:
     type: aes # aes is the default and only standard option
     private_key: ab345678901234567890123456789012
   distribution:
-    data_shards: 3
+    data_shards: 2
     parity_shards: 1
