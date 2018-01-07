@@ -19,7 +19,6 @@ package test
 import (
 	"sync"
 
-	"github.com/zero-os/0-stor/client/metastor"
 	dbp "github.com/zero-os/0-stor/client/metastor/db"
 )
 
@@ -65,7 +64,7 @@ func (db *DB) Get(key []byte) ([]byte, error) {
 	metadata, ok := db.md[string(key)]
 	db.mux.RUnlock()
 	if !ok {
-		return nil, metastor.ErrNotFound
+		return nil, dbp.ErrNotFound
 	}
 	return []byte(metadata), nil
 }
@@ -89,7 +88,7 @@ func (db *DB) Update(key []byte, cb dbp.UpdateCallback) error {
 		version := db.versions[keyStr]
 		db.mux.RUnlock()
 		if !ok {
-			return metastor.ErrNotFound
+			return dbp.ErrNotFound
 		}
 
 		metadataOut, err := cb([]byte(metadataIn))

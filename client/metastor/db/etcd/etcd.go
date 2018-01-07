@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zero-os/0-stor/client/metastor"
 	dbp "github.com/zero-os/0-stor/client/metastor/db"
 
 	"github.com/coreos/etcd/clientv3"
@@ -75,7 +74,7 @@ func (db *DB) Get(key []byte) ([]byte, error) {
 		return nil, err
 	}
 	if len(resp.Kvs) < 1 {
-		return nil, metastor.ErrNotFound
+		return nil, dbp.ErrNotFound
 	}
 	return resp.Kvs[0].Value, nil
 }
@@ -99,7 +98,7 @@ func (db *DB) Update(key []byte, cb dbp.UpdateCallback) error {
 		// get the metadata
 		metadataIn := stm.Get(keyStr)
 		if len(metadataIn) == 0 {
-			return metastor.ErrNotFound
+			return dbp.ErrNotFound
 		}
 
 		// update the metadata

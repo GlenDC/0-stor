@@ -1,5 +1,13 @@
 package db
 
+import "errors"
+
+var (
+	// ErrNotFound is the error returned by metadata KV database,
+	// in case metadata requested couldn't be found.
+	ErrNotFound = errors.New("key couldn't be found")
+)
+
 // DB interface is the interface defining how to interact with a key value store,
 // as ued for metadata storage. ALl DB implements are assumed to be threadsafe.
 type DB interface {

@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/zero-os/0-stor/client/metastor"
 	dbp "github.com/zero-os/0-stor/client/metastor/db"
 
 	"github.com/stretchr/testify/require"
@@ -44,7 +43,7 @@ func RoundTrip(t *testing.T, db dbp.DB) {
 
 	// ensure metadata is not there yet
 	_, err := db.Get(key)
-	require.Equal(metastor.ErrNotFound, err)
+	require.Equal(dbp.ErrNotFound, err)
 
 	// set the metadata
 	err = db.Set(key, data)
@@ -62,7 +61,7 @@ func RoundTrip(t *testing.T, db dbp.DB) {
 	require.NoError(err)
 	// make sure we can't get it back
 	_, err = db.Get(key)
-	require.Equal(metastor.ErrNotFound, err)
+	require.Equal(dbp.ErrNotFound, err)
 }
 
 // SyncUpdate tests that the given database
@@ -73,7 +72,7 @@ func SyncUpdate(t *testing.T, db dbp.DB) {
 	key := []byte("foo")
 
 	err := db.Update(key, func(bs []byte) ([]byte, error) { return bs, nil })
-	require.Equal(metastor.ErrNotFound, err)
+	require.Equal(dbp.ErrNotFound, err)
 
 	data := []byte("foo")
 	err = db.Set(key, data)
